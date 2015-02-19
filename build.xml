@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="XPLanG" default="build" basedir="." xmlns:doxygen="antlib:org.doxygen.tools" xmlns:ivy="antlib:org.apache.ivy.ant">
+	<property name="src.dir" location="src" />
+	<property name="bin.dir" location="bin" />
+	<property name="lib.dir" value="lib" />
+
+	<path id='build.path'>
+		<fileset dir='${lib.dir}'>
+			<include name='**/*.jar' />
+		</fileset>
+	</path>
+	<path id='run.path'>
+		<fileset dir='${lib.dir}'>
+			<include name='**/*.jar' />
+		</fileset>
+    	<path location="${bin.dir}"/>
+    	<path location="."/>
+	</path>
+
+    <target name="bootstrap" description="Install Apache Ivy">
+        <mkdir dir="${user.home}/.ant/lib"/>
+        <get dest="${user.home}/.ant/lib/ivy.jar" src="http://search.maven.org/remotecontent?filepath=org/apache/ivy/ivy/2.3.0/ivy-2.3.0.jar"/>
+    </target>
+	<target name="resolve" description="Resolve dependencies with Ivy">
+		<mkdir dir="${lib.dir}" />
+		<ivy:resolve />
+		<ivy:retrieve sync="true" type="jar" pattern="${lib.dir}/[artifact].[ext]"/>
+	</target>
+
+	<target name='clean' description="Delete compiled binaries">
+		<delete dir="${bin.dir}" />
+	</target>
+
+	<target name='build'>
+		<mkdir dir="${bin.dir}" />
+		<mkdir dir="${lib.dir}" />
+		<javac encoding="utf8" includeantruntime="false" srcdir="${src.dir}" debug="on" destdir="${bin.dir}" classpathref="build.path" />
+	</target>
+
+	<target name='runserver' depends='build, cl-args' description="Run the server">
+		<java classpathref="run.path" classname='hu.ppke.itk.sciar.kripki.server.Server' fork='true'>
+			<assertions enableSystemAssertions="true" >
+				<enable package="hu.ppke.itk.sciar.kripki.server" />
+			</assertions>
+		</java>
+	</target>
+
+	<target name="cl-args" unless="args">
+		<property name="args" value="" />
+	</target>
+
+</project>
