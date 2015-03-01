@@ -1,5 +1,6 @@
 package hu.ppke.itk.sciar.kripki.server;
 
+
 import javax.xml.parsers.*;
 import org.xml.sax.*;
 import org.xml.sax.helpers.*;
@@ -8,6 +9,10 @@ import org.xml.sax.helpers.*;
 public class Server {
 	public static void main(String[] args) throws Exception {
 		System.out.println("Server started.");
+
+		Database db = new XMLDatabase("db/users.xml", "db/users");
+
+		System.out.println("Database open.");
 
 		SAXParserFactory spf = SAXParserFactory.newInstance();
 		SAXParser saxParser = spf.newSAXParser();
@@ -20,7 +25,13 @@ public class Server {
 		if(!handler.getState().isAccepting()) {
 			System.out.println("<error type='malformed' />");
 		} else {
-			System.out.println("User: "+ handler.getUser());
+			User user = db.getUser( handler.getUser().name );
+			if(user.equals(User.noneSuch)) {
+				System.out.println(String.format("No user named %s, creating it...", handler.getUser().name));
+				user = db.addUser(handler.getUser().name, handler.getUser().verifier);
+			}
+
+			System.out.println("Authenticated as " + user.name);
 		}
 	}
 
