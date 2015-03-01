@@ -2,6 +2,7 @@ package hu.ppke.itk.sciar.kripki.server;
 
 
 import java.io.File;
+import java.io.StringWriter;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -32,7 +33,7 @@ class XMLDatabase implements Database {
 		if(!usersFile.exists()) {
 			doc = documentBuilder.newDocument();
 			doc.appendChild(doc.createElement("users"));
-			flush();
+			flush(doc, usersFile);
 		} else if(usersFile.isDirectory()) {
 			throw new RuntimeException(String.format("usersfile %s exists and is a directory", usersFile));
 		} else {
@@ -78,7 +79,7 @@ class XMLDatabase implements Database {
 		us.setAttribute("name", name);
 		us.setAttribute("verifier", verifier);
 		doc.getDocumentElement().appendChild(us);
-		flush();
+		flush(doc, usersFile);
 		return new User(name, verifier);
 	}
 
@@ -91,11 +92,7 @@ class XMLDatabase implements Database {
 			root.setAttribute("name", user.name);
 			root.setAttribute("verifier", user.verifier);
 			udoc.appendChild(root);
-			try {
-				transformer.transform(new DOMSource(udoc), new StreamResult(ufil));
-			} catch(Exception e) {
-				throw new RuntimeException(String.format("could not flush file %s", usersFile), e);
-			}
+			flush(udoc, ufil);
 		} else {
 			try {
 				udoc = documentBuilder.parse(ufil);
@@ -135,19 +132,27 @@ class XMLDatabase implements Database {
 		rec.setAttribute("recordsalt", record.salt);
 		udoc.getDocumentElement().appendChild(rec);
 
-		try {
-			transformer.transform(new DOMSource(udoc), new StreamResult(ufil));
-		} catch(Exception e) {
-			throw new RuntimeException(String.format("could not flush file %s", usersFile), e);
-		}
+		flush(udoc, new File(usersLib, user.name+".xml"));
 	}
 
-	private void flush() {
+	@Override public String allRecords(User user) {
+		assert userAuth(user);
+
+		StringWriter sw = new StringWriter();
+		try {
+			transformer.transform( new DOMSource(getUserXML(user)), new StreamResult(sw) );
+		} catch(TransformerException e) {
+			throw new RuntimeException("Transform error", e);
+		}
+		return sw.toString();
+	}
+
+	private void flush(Document document, File file) {
 		try {
 			transformer.transform(new DOMSource(doc), new StreamResult(usersFile));
 			System.out.println("XMLDatabase flushed.");
 		} catch(TransformerException e) {
-			throw new RuntimeException("Failed to flush changes to usersFile!", e);
+			throw new RuntimeException(String.format("Failed to flush to %s", file), e);
 		}
 	}
 }

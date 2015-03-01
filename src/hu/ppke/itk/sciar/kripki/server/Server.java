@@ -68,8 +68,8 @@ public class Server {
 			}
 			stack.removeFirst();
 
-			if(stack.isEmpty() && !user.equals(User.noneSuch)) {
-				// send all records as reply to user
+			if(stack.isEmpty() && !user.equals(User.noneSuch) && reply.isEmpty()) {
+				reply = db.allRecords(user);
 			}
 		}
 
