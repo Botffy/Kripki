@@ -1,6 +1,7 @@
 package hu.ppke.itk.sciar.kripki.server;
 
-
+import java.util.Deque;
+import java.util.ArrayDeque;
 import javax.xml.parsers.*;
 import org.xml.sax.*;
 import org.xml.sax.helpers.*;
@@ -18,72 +19,57 @@ public class Server {
 		SAXParser saxParser = spf.newSAXParser();
 		XMLReader xmlReader = saxParser.getXMLReader();
 
-		RequestHandler handler = new RequestHandler();
+		RequestHandler handler = new RequestHandler(db);
 		xmlReader.setContentHandler(handler);
 		xmlReader.parse("example.xml");
 
-		if(!handler.getState().isAccepting()) {
-			System.out.println("<error type='malformed' />");
-		} else {
-			User user = db.getUser( handler.getUser().name );
-			if(user.equals(User.noneSuch)) {
-				System.out.println(String.format("No user named %s, creating it...", handler.getUser().name));
-				user = db.addUser(handler.getUser().name, handler.getUser().verifier);
-			}
-
-			System.out.println("Authenticated as " + user.name);
-		}
+		System.out.println(handler.getReply());
 	}
 
 	private static class RequestHandler extends DefaultHandler {
-		public static enum State {
-			START(false),
-			ERROR(false),
-			AUTH(true),
-			ADD_RECORD(true);
-
-			private final boolean accepting;
-			private State(boolean accepting) {
-				this.accepting = accepting;
-			}
-
-			public boolean isAccepting() {
-				return accepting;
-			}
-		}
-
-		private State state = State.START;
+		private Deque<String> stack = new ArrayDeque<String>();
+		private final Database db;
 		private User user = null;
+		private String reply = "";
+
+		public RequestHandler(Database db) {
+			this.db = db;
+		}
 
 		@Override public void startElement(String namespaceURI, String localName, String qName, Attributes attributes) throws SAXException {
-			if(state == State.START) {
-				if("user".equalsIgnoreCase(qName)) {
-					state = State.AUTH;
-					String name = attributes.getValue("name");
-					String verifier = attributes.getValue("verifier");
-					if(name==null || verifier==null) state = State.ERROR;
-					else this.user = new User( name, verifier );
-				}
-				else state = State.ERROR;
+			if(stack.isEmpty()) {
+				stack.addFirst(qName);
+				user = db.getUser( attributes.getValue("name") );
+				if(user.equals(User.noneSuch)) {
+					System.out.println("Creating new user...");
+					user = db.addUser( attributes.getValue("name"), attributes.getValue("verifier") );
+				} else if(!user.verifier.equals(attributes.getValue("verifier"))) {
+					reply = "<error type='user/auth' />";
+					throw new SAXException("Failed to authenticate.");
+				} else System.out.println(String.format("Authenticated as %s", user.name));
+			} else if( stack.peek().equals("user") && "record".equalsIgnoreCase(qName) ) {
+				stack.addFirst(qName);
+				System.out.println("Add record");
+
+			} else {
+				reply = "<error type='malformed' />";
+				throw new SAXException("Malformed XML");
 			}
-			else if(state == State.AUTH) {
-				if("record".equalsIgnoreCase(qName)) {
-					state = State.ADD_RECORD;
-					String url = attributes.getValue("url");
-					String username = attributes.getValue("username");
-					String password = attributes.getValue("passwd");
-					String salt = attributes.getValue("recordsalt");
-					if(url==null || username==null || password==null || salt==null) state = State.ERROR;
-				}
+		}
+		@Override public void endElement(String uri, String localName, String qName) throws SAXException {
+			if(!stack.peek().equalsIgnoreCase(qName)) {
+				reply = "<error type='malformed' />";
+				throw new SAXException("Malformed XML (end)");
 			}
-			else state = State.ERROR;
+			stack.removeFirst();
+
+			if(stack.isEmpty() && !user.equals(User.noneSuch)) {
+				// send all records as reply to user
+			}
 		}
 
-		public State getState() {
-			return state;
-		}
-		public User getUser() {
-			return user;
+		public String getReply() {
+			return reply;
 		}
 	}
 }

@@ -38,6 +38,12 @@ class XMLDatabase implements Database {
 			doc = builder.parse(usersFile);
 			doc.getDocumentElement().normalize();
 		}
+
+		if(!usersLib.exists()) {
+			if(!usersLib.mkdirs()) throw new RuntimeException(String.format("Could not create userLib %s", usersLib));
+		} else if(!usersLib.isDirectory())  {
+			throw new RuntimeException(String.format("userLib %s exists and is not a directory", usersLib));
+		}
 	}
 
 
