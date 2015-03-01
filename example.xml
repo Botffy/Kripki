@@ -1,0 +1,7 @@
+<users>
+	<user 	name="example"
+			verifier="doublehashedverifier"
+	>
+		<record url="valami.hu" username="BASE64ENCODEDUSERNAME" passwd="BASE64ENCODEDPASSWD" recordsalt="BASE64ENCODEDSALTFORRECORDKEY" />
+	</user>
+</users>

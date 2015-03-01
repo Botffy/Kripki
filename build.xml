@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<project name="XPLanG" default="build" basedir="." xmlns:doxygen="antlib:org.doxygen.tools" xmlns:ivy="antlib:org.apache.ivy.ant">
+<project name="Kripki" default="build" basedir="." xmlns:doxygen="antlib:org.doxygen.tools" xmlns:ivy="antlib:org.apache.ivy.ant">
 	<property name="src.dir" location="src" />
 	<property name="bin.dir" location="bin" />
 	<property name="lib.dir" value="lib" />
