@@ -2,7 +2,7 @@ package hu.ppke.itk.sciar.kripki.server;
 
 
 import java.io.File;
-import java.io.StringWriter;
+import java.util.Scanner;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -83,23 +83,27 @@ class XMLDatabase implements Database {
 		return new User(name, verifier);
 	}
 
-	private Document getUserXML(User user) {
+	private File getUserFile(User user) {
 		File ufil = new File(usersLib, user.name+".xml");
-		Document udoc;
 		if(!ufil.exists())	{
-			udoc = documentBuilder.newDocument();
+			Document udoc = documentBuilder.newDocument();
 			Element root = udoc.createElement("user");
 			root.setAttribute("name", user.name);
 			root.setAttribute("verifier", user.verifier);
 			udoc.appendChild(root);
 			flush(udoc, ufil);
-		} else {
-			try {
-				udoc = documentBuilder.parse(ufil);
-				udoc.getDocumentElement().normalize();
-			} catch(Exception e) {
-				throw new RuntimeException(String.format("could not parse file %s", usersFile), e);
-			}
+		}
+		return ufil;
+	}
+
+	private Document getUserXML(User user) {
+		File ufil = getUserFile(user);
+		Document udoc;
+		try {
+			udoc = documentBuilder.parse(ufil);
+			udoc.getDocumentElement().normalize();
+		} catch(Exception e) {
+			throw new RuntimeException(String.format("could not parse file %s", usersFile), e);
 		}
 		return udoc;
 	}
@@ -138,13 +142,11 @@ class XMLDatabase implements Database {
 	@Override public String allRecords(User user) {
 		assert userAuth(user);
 
-		StringWriter sw = new StringWriter();
 		try {
-			transformer.transform( new DOMSource(getUserXML(user)), new StreamResult(sw) );
-		} catch(TransformerException e) {
-			throw new RuntimeException("Transform error", e);
+			return new Scanner(getUserFile(user)).useDelimiter("\\Z").next();
+		} catch(java.io.FileNotFoundException e) {
+			throw new RuntimeException("This should never happen", e);
 		}
-		return sw.toString();
 	}
 
 	private void flush(Document document, File file) {
