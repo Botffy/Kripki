@@ -50,7 +50,12 @@ public class Server {
 			} else if( stack.peek().equals("user") && "record".equalsIgnoreCase(qName) ) {
 				stack.addFirst(qName);
 				System.out.println("Add record");
-
+				db.addRecord(user, new Record(
+					attributes.getValue("url"),
+					attributes.getValue("username"),
+					attributes.getValue("passwd"),
+					attributes.getValue("recordsalt")
+				));
 			} else {
 				reply = "<error type='malformed' />";
 				throw new SAXException("Malformed XML");

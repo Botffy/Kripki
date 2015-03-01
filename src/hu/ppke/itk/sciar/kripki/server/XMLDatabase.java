@@ -3,6 +3,7 @@ package hu.ppke.itk.sciar.kripki.server;
 
 import java.io.File;
 import org.w3c.dom.*;
+import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.transform.Transformer;
@@ -17,6 +18,8 @@ class XMLDatabase implements Database {
 	private final Document doc;
 	private final File usersFile;
 	private final File usersLib;
+	private final Transformer transformer = TransformerFactory.newInstance().newTransformer();
+	private final DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 
 	public XMLDatabase(String usersFile, String usersLib) throws Exception {
 		this(new File(usersFile), new File(usersLib));
@@ -26,16 +29,14 @@ class XMLDatabase implements Database {
 		this.usersFile = usersFile;
 		this.usersLib  = usersLib;
 
-		DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-
 		if(!usersFile.exists()) {
-			doc = builder.newDocument();
+			doc = documentBuilder.newDocument();
 			doc.appendChild(doc.createElement("users"));
 			flush();
 		} else if(usersFile.isDirectory()) {
 			throw new RuntimeException(String.format("usersfile %s exists and is a directory", usersFile));
 		} else {
-			doc = builder.parse(usersFile);
+			doc = documentBuilder.parse(usersFile);
 			doc.getDocumentElement().normalize();
 		}
 
@@ -44,6 +45,9 @@ class XMLDatabase implements Database {
 		} else if(!usersLib.isDirectory())  {
 			throw new RuntimeException(String.format("userLib %s exists and is not a directory", usersLib));
 		}
+
+		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+		transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
 	}
 
 
@@ -61,6 +65,11 @@ class XMLDatabase implements Database {
 		return User.noneSuch;
 	}
 
+	public boolean userAuth(User user) {
+		User stor = getUser(user.name);
+		return stor.verifier.equals(user.verifier);
+	}
+
 	@Override public User addUser(String name, String verifier) {
 		if(name.isEmpty() || verifier.isEmpty()) throw new RuntimeException("Tried to add empty user");
 		if(!getUser(name).equals(User.noneSuch)) throw new RuntimeException("User already exists");
@@ -73,11 +82,56 @@ class XMLDatabase implements Database {
 		return new User(name, verifier);
 	}
 
+	@Override public void addRecord(User user, Record record) {
+		assert userAuth(user);
+
+		File ufil = new File(usersLib, user.name+".xml");
+		Document udoc;
+		if(!ufil.exists())	{
+			udoc = documentBuilder.newDocument();
+			Element root = udoc.createElement("user");
+			root.setAttribute("name", user.name);
+			root.setAttribute("verifier", user.verifier);
+			udoc.appendChild(root);
+		} else {
+			try {
+				udoc = documentBuilder.parse(ufil);
+				udoc.getDocumentElement().normalize();
+			} catch(Exception e) {
+				throw new RuntimeException(String.format("could not parse file %s", usersFile), e);
+			}
+		}
+
+		// record exists?
+		NodeList list = udoc.getDocumentElement().getElementsByTagName("record");
+		Element rec = null;
+		for(int i=0; i<list.getLength(); ++i) {
+			if( list.item(i).getNodeType() != Node.ELEMENT_NODE ) continue;
+			if( ((Element)list.item(i)).getAttribute("url").equals(record.url) ) {
+				rec = (Element) list.item(i);
+				rec = (Element) rec.getParentNode().removeChild(rec);
+			}
+		}
+
+		if(rec == null) {
+			rec = udoc.createElement("record");
+		}
+
+		rec.setAttribute("url", record.url);
+		rec.setAttribute("username", record.username);
+		rec.setAttribute("passwd", record.password);
+		rec.setAttribute("recordsalt", record.salt);
+		udoc.getDocumentElement().appendChild(rec);
+
+		try {
+			transformer.transform(new DOMSource(udoc), new StreamResult(ufil));
+		} catch(Exception e) {
+			throw new RuntimeException(String.format("could not flush file %s", usersFile), e);
+		}
+	}
+
 	private void flush() {
 		try {
-			TransformerFactory transformerFactory = TransformerFactory.newInstance();
-			Transformer transformer = transformerFactory.newTransformer();
-			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 			transformer.transform(new DOMSource(doc), new StreamResult(usersFile));
 			System.out.println("XMLDatabase flushed.");
 		} catch(TransformerException e) {
