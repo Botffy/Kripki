@@ -19,13 +19,14 @@ public class Server {
 
 		if(!handler.getState().isAccepting()) {
 			System.out.println("<error type='malformed' />");
+		} else {
+			System.out.println("User: "+ handler.getUser());
 		}
 	}
 
 	private static class RequestHandler extends DefaultHandler {
 		public static enum State {
 			START(false),
-			ROOT(false),
 			ERROR(false),
 			AUTH(true),
 			ADD_RECORD(true);
@@ -45,12 +46,6 @@ public class Server {
 
 		@Override public void startElement(String namespaceURI, String localName, String qName, Attributes attributes) throws SAXException {
 			if(state == State.START) {
-				if("users".equalsIgnoreCase(qName)) {
-					state = State.ROOT;
-				}
-				else state = State.ERROR;
-			}
-			else if(state == State.ROOT) {
 				if("user".equalsIgnoreCase(qName)) {
 					state = State.AUTH;
 					String name = attributes.getValue("name");
