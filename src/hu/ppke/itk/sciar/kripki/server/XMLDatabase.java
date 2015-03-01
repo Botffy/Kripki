@@ -82,9 +82,7 @@ class XMLDatabase implements Database {
 		return new User(name, verifier);
 	}
 
-	@Override public void addRecord(User user, Record record) {
-		assert userAuth(user);
-
+	private Document getUserXML(User user) {
 		File ufil = new File(usersLib, user.name+".xml");
 		Document udoc;
 		if(!ufil.exists())	{
@@ -93,6 +91,11 @@ class XMLDatabase implements Database {
 			root.setAttribute("name", user.name);
 			root.setAttribute("verifier", user.verifier);
 			udoc.appendChild(root);
+			try {
+				transformer.transform(new DOMSource(udoc), new StreamResult(ufil));
+			} catch(Exception e) {
+				throw new RuntimeException(String.format("could not flush file %s", usersFile), e);
+			}
 		} else {
 			try {
 				udoc = documentBuilder.parse(ufil);
@@ -101,6 +104,13 @@ class XMLDatabase implements Database {
 				throw new RuntimeException(String.format("could not parse file %s", usersFile), e);
 			}
 		}
+		return udoc;
+	}
+
+	@Override public void addRecord(User user, Record record) {
+		assert userAuth(user);
+
+		Document udoc = getUserXML(user);
 
 		// record exists?
 		NodeList list = udoc.getDocumentElement().getElementsByTagName("record");
@@ -109,6 +119,8 @@ class XMLDatabase implements Database {
 			if( list.item(i).getNodeType() != Node.ELEMENT_NODE ) continue;
 			if( ((Element)list.item(i)).getAttribute("url").equals(record.url) ) {
 				rec = (Element) list.item(i);
+				Node sib = rec.getPreviousSibling();
+				if(sib.getNodeType() == Node.TEXT_NODE) sib.getParentNode().removeChild(sib);
 				rec = (Element) rec.getParentNode().removeChild(rec);
 			}
 		}

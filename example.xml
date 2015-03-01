@@ -1,5 +1,5 @@
 <user 	name="mormota"
 		verifier="atomrom"
 >
-	<record url="valami.hu" username="morm" passwd="jódili" recordsalt="BASE64ENCODEDSALTFORRECORDKEY" />
+	<record url="valami.hu" username="morm" passwd="mörmöte" recordsalt="BASE64ENCODEDSALTFORRECORDKEY" />
 </user>
