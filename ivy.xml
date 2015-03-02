@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ivy-module version="2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://ant.apache.org/ivy/schemas/ivy.xsd">
+	<info organisation="hu.ppke.itk.sciar" module="kripki"/>
+	<dependencies>
+		<dependency org="org.apache.commons" name="commons-lang3" rev="3.3.2"/>
+	</dependencies>
+</ivy-module>
