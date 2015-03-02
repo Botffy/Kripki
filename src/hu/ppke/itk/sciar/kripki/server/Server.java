@@ -11,10 +11,15 @@ import org.apache.commons.lang3.StringEscapeUtils;
 public class Server {
 	public static void main(String[] args) throws Exception {
 		System.out.println("Server started.");
-
 		Database db = new XMLDatabase("db/users.xml", "db/users");
-
 		System.out.println("Database open.");
+
+		// expect conn
+		// expect auth
+		// 		reply with all records
+		// client MAY add new record
+		//		reply with all records
+		
 
 		SAXParser saxParser = SAXParserFactory.newInstance().newSAXParser();
 		XMLReader xmlReader = saxParser.getXMLReader();
