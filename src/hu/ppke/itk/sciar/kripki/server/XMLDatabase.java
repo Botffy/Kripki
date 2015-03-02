@@ -103,7 +103,7 @@ class XMLDatabase implements Database {
 			udoc = documentBuilder.parse(ufil);
 			udoc.getDocumentElement().normalize();
 		} catch(Exception e) {
-			throw new RuntimeException(String.format("could not parse file %s", usersFile), e);
+			throw new RuntimeException(String.format("could not parse file %s", ufil), e);
 		}
 		return udoc;
 	}
@@ -151,8 +151,8 @@ class XMLDatabase implements Database {
 
 	private void flush(Document document, File file) {
 		try {
-			transformer.transform(new DOMSource(doc), new StreamResult(usersFile));
-			System.out.println("XMLDatabase flushed.");
+			transformer.transform(new DOMSource(document), new StreamResult(file));
+			System.out.println(String.format("Data flushed to %s.", file));
 		} catch(TransformerException e) {
 			throw new RuntimeException(String.format("Failed to flush to %s", file), e);
 		}
