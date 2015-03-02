@@ -5,6 +5,7 @@ import java.util.ArrayDeque;
 import javax.xml.parsers.*;
 import org.xml.sax.*;
 import org.xml.sax.helpers.*;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 
 public class Server {
@@ -15,18 +16,36 @@ public class Server {
 
 		System.out.println("Database open.");
 
-		SAXParserFactory spf = SAXParserFactory.newInstance();
-		SAXParser saxParser = spf.newSAXParser();
+		SAXParser saxParser = SAXParserFactory.newInstance().newSAXParser();
 		XMLReader xmlReader = saxParser.getXMLReader();
 
 		RequestHandler handler = new RequestHandler(db);
 		xmlReader.setContentHandler(handler);
-		xmlReader.parse("example.xml");
+		xmlReader.setErrorHandler(handler);
 
-		System.out.println(handler.getReply());
+		String reply;
+		try {
+			xmlReader.parse("example.xml");
+			reply = handler.getReply();
+		} catch(RequestHandler.Error e) {
+			reply = e.getReply();
+		}
+		System.out.println(reply);
 	}
 
 	private static class RequestHandler extends DefaultHandler {
+		public class Error extends SAXException {
+			private final String type;
+			private Error(String type, String msg) {
+				super(msg);
+				this.type = type;
+			}
+
+			public String getReply() {
+				return String.format("<error type='%s'>%s</error>", StringEscapeUtils.escapeXml11(type), StringEscapeUtils.escapeXml11(getMessage()));
+			}
+		}
+
 		private Deque<String> stack = new ArrayDeque<String>();
 		private final Database db;
 		private User user = null;
@@ -44,8 +63,7 @@ public class Server {
 					System.out.println("Creating new user...");
 					user = db.addUser( attributes.getValue("name"), attributes.getValue("verifier") );
 				} else if(!user.verifier.equals(attributes.getValue("verifier"))) {
-					reply = "<error type='user/auth' />";
-					throw new SAXException("Failed to authenticate.");
+					throw new Error("user/auth", "Could not authorize user.");
 				} else System.out.println(String.format("Authenticated as %s", user.name));
 			} else if( stack.peek().equals("user") && "record".equalsIgnoreCase(qName) ) {
 				stack.addFirst(qName);
@@ -57,20 +75,22 @@ public class Server {
 					attributes.getValue("recordsalt")
 				));
 			} else {
-				reply = "<error type='malformed' />";
-				throw new SAXException("Malformed XML");
+				throw new Error("malformed", String.format("Unexpected request element: %s", qName));
 			}
 		}
 		@Override public void endElement(String uri, String localName, String qName) throws SAXException {
 			if(!stack.peek().equalsIgnoreCase(qName)) {
-				reply = "<error type='malformed' />";
-				throw new SAXException("Malformed XML (end)");
+				throw new Error("malformed", "Element mismatch");
 			}
 			stack.removeFirst();
 
 			if(stack.isEmpty() && !user.equals(User.noneSuch) && reply.isEmpty()) {
 				reply = db.allRecords(user);
 			}
+		}
+
+		@Override public void fatalError(SAXParseException e) throws RequestHandler.Error {
+			throw new Error("malformed", e.getMessage());
 		}
 
 		public String getReply() {
