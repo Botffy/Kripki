@@ -9,7 +9,6 @@ import java.nio.file.*;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.*;
 import java.math.BigInteger;
-
 import org.apache.commons.lang3.StringUtils;
 
 
@@ -61,4 +60,15 @@ public class DiffieHellman {
 	}
 
 	private static final Map<Integer, BigInteger> moduli = DiffieHellman.loadModuli("res/DHMods.txt");
+
+
+	private final int primitiveElement;
+	private final BigInteger modulus;
+	public DiffieHellman(int modulusBit, int primitiveElement) {
+		this.primitiveElement = primitiveElement;
+
+		if(moduli.containsKey(modulusBit)) throw new IllegalArgumentException(String.format("I don't know a DH modulus of size %d", modulusBit));
+
+		this.modulus = moduli.get(modulusBit);
+	}
 }

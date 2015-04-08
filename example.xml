@@ -1,5 +1,3 @@
-<user 	name="mormota"
-		verifier="atomrom"
->
+<user 	name="mormotato" verifier="atomrom">
 	<record url="valami.hu" username="morm" passwd="mörmöte" recordsalt="BASE64ENCODEDSALTFORRECORDKEY" />
 </user>

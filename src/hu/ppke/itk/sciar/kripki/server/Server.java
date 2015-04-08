@@ -1,105 +1,69 @@
 package hu.ppke.itk.sciar.kripki.server;
 
-import java.util.Deque;
-import java.util.ArrayDeque;
-import javax.xml.parsers.*;
-import org.xml.sax.*;
-import org.xml.sax.helpers.*;
+import java.nio.file.*;
+import java.nio.charset.StandardCharsets;
+import org.w3c.dom.*;
+import net.sf.practicalxml.ParseUtil;
+import net.sf.practicalxml.OutputUtil;
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class Server {
+	private final static Logger log = LoggerFactory.getLogger("Root.SERVER");
+
 	public static void main(String[] args) throws Exception {
 		System.out.println("Server started.");
 		Database db = new XMLDatabase("db/users.xml", "db/users");
 		System.out.println("Database open.");
 
 		// expect conn
+		//  DH exchange
 		// expect auth
 		// 		reply with all records
-		// client MAY add new record
-		//		reply with all records
-		
 
-		SAXParser saxParser = SAXParserFactory.newInstance().newSAXParser();
-		XMLReader xmlReader = saxParser.getXMLReader();
-
-		RequestHandler handler = new RequestHandler(db);
-		xmlReader.setContentHandler(handler);
-		xmlReader.setErrorHandler(handler);
-
-		String reply;
-		try {
-			xmlReader.parse("example.xml");
-			reply = handler.getReply();
-		} catch(RequestHandler.Error e) {
-			reply = e.getReply();
-		}
+		Server server = new Server(db);
+		Document req = ParseUtil.parse(new String(Files.readAllBytes(Paths.get("example.xml"))));
+		String reply = server.handleRequest(req);
 		System.out.println(reply);
 	}
 
-	private static class RequestHandler extends DefaultHandler {
-		public class Error extends SAXException {
-			private final String type;
-			private Error(String type, String msg) {
-				super(msg);
-				this.type = type;
-			}
+	private final Database db;
+	private Server(Database db) {
+		this.db = db;
+	}
 
-			public String getReply() {
-				return String.format("<error type='%s'>%s</error>", StringEscapeUtils.escapeXml11(type), StringEscapeUtils.escapeXml11(getMessage()));
-			}
+	public String handleRequest(Document request) {
+		log.info("Authenticating...");
+		Element userElement = request.getDocumentElement();
+		if(!"user".equals(userElement.getTagName())) {
+			log.info("Malformed XML: root element was {}", userElement.getTagName());
+			return "error: malformed";
 		}
 
-		private Deque<String> stack = new ArrayDeque<String>();
-		private final Database db;
-		private User user = null;
-		private String reply = "";
+		String username = userElement.getAttribute("name");
+		String verifier = userElement.getAttribute("verifier");
 
-		public RequestHandler(Database db) {
-			this.db = db;
+		if(StringUtils.isBlank(username) || StringUtils.isBlank(verifier)) {
+			log.info("Malformed XML: name or verifier blank");
+			return "error: malformed";
 		}
 
-		@Override public void startElement(String namespaceURI, String localName, String qName, Attributes attributes) throws SAXException {
-			if(stack.isEmpty()) {
-				stack.addFirst(qName);
-				user = db.getUser( attributes.getValue("name") );
-				if(user.equals(User.noneSuch)) {
-					System.out.println("Creating new user...");
-					user = db.addUser( attributes.getValue("name"), attributes.getValue("verifier") );
-				} else if(!user.verifier.equals(attributes.getValue("verifier"))) {
-					throw new Error("user/auth", "Could not authorize user.");
-				} else System.out.println(String.format("Authenticated as %s", user.name));
-			} else if( stack.peek().equals("user") && "record".equalsIgnoreCase(qName) ) {
-				stack.addFirst(qName);
-				System.out.println("Add record");
-				db.addRecord(user, new Record(
-					attributes.getValue("url"),
-					attributes.getValue("username"),
-					attributes.getValue("passwd"),
-					attributes.getValue("recordsalt")
-				));
-			} else {
-				throw new Error("malformed", String.format("Unexpected request element: %s", qName));
-			}
-		}
-		@Override public void endElement(String uri, String localName, String qName) throws SAXException {
-			if(!stack.peek().equalsIgnoreCase(qName)) {
-				throw new Error("malformed", "Element mismatch");
-			}
-			stack.removeFirst();
-
-			if(stack.isEmpty() && !user.equals(User.noneSuch) && reply.isEmpty()) {
-				reply = db.allRecords(user);
-			}
+		User user = db.getUser(username);
+		if(user == User.noneSuch) {
+			log.info("No user called '{}'", username);
+			user = db.addUser( username, verifier );
+			log.info("Created new user '{}'", user.name);
+		} else if(user.name.equals(username) && user.verifier.equals(verifier)) {
+			log.info("Authenticated user {}", username);
+		} else {
+			log.info("Authentication failed for {}", username);
+			return "error: auth";
 		}
 
-		@Override public void fatalError(SAXParseException e) throws RequestHandler.Error {
-			throw new Error("malformed", e.getMessage());
-		}
-
-		public String getReply() {
-			return reply;
-		}
+		return "mightyfine";
 	}
 }

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration>
+	<appender name="SERVER" class="ch.qos.logback.core.FileAppender">
+		<param name="Append" value="false" />
+		<file>server.log</file>
+		<encoder>
+			<pattern>%date %level [%file:%line] %msg%n</pattern>
+		</encoder>
+	</appender>
+	<appender name="CLIENT" class="ch.qos.logback.core.FileAppender">
+		<param name="Append" value="false" />
+		<file>client.log</file>
+		<encoder>
+			<pattern>%date %level [%file:%line] %msg%n</pattern>
+		</encoder>
+	</appender>
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%date %logger{36}[%thread] %level [%file:%line] %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<logger name="Root.SERVER" level="TRACE">
+		<appender-ref ref="SERVER" />
+	</logger>
+	<logger name="Root.CLIENT" level="TRACE">
+		<appender-ref ref="CLIENT" />
+	</logger>
+	<root level="DEBUG">
+		<appender-ref ref="STDOUT" />
+	</root>
+</configuration>
