@@ -8,6 +8,7 @@ class Record {
 	public final String salt;
 
 	public Record(String url, String username, String password, String salt) {
+		// fixme: check consistency or something?
 		this.url = url;
 		this.username = username;
 		this.password = password;

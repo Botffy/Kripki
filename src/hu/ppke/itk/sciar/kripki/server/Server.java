@@ -3,8 +3,10 @@ package hu.ppke.itk.sciar.kripki.server;
 import java.nio.file.*;
 import java.nio.charset.StandardCharsets;
 import org.w3c.dom.*;
+import net.sf.practicalxml.DomUtil;
 import net.sf.practicalxml.ParseUtil;
 import net.sf.practicalxml.OutputUtil;
+import net.sf.practicalxml.XmlException;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -26,8 +28,15 @@ public class Server {
 		// 		reply with all records
 
 		Server server = new Server(db);
-		Document req = ParseUtil.parse(new String(Files.readAllBytes(Paths.get("example.xml"))));
-		String reply = server.handleRequest(req);
+
+		String reply = null;
+		try {
+			Document req = ParseUtil.parse(new String(Files.readAllBytes(Paths.get("example.xml"))));
+			reply = server.handleRequest(req);
+		} catch(XmlException e) {
+			log.info("Malformed XML: {}", e.getMessage());
+			reply = e.getMessage();
+		}
 		System.out.println(reply);
 	}
 
@@ -40,7 +49,7 @@ public class Server {
 		log.info("Authenticating...");
 		Element userElement = request.getDocumentElement();
 		if(!"user".equals(userElement.getTagName())) {
-			log.info("Malformed XML: root element was {}", userElement.getTagName());
+			log.info("Malformed XML: root element was '{}' (expected 'user')", userElement.getTagName());
 			return "error: malformed";
 		}
 
@@ -62,6 +71,22 @@ public class Server {
 		} else {
 			log.info("Authentication failed for {}", username);
 			return "error: auth";
+		}
+
+		for(Element elem : DomUtil.getChildren(userElement)) {
+			if("record".equals(elem.getTagName())) {
+				Record record = new Record(
+					elem.getAttribute("url"),
+					elem.getAttribute("username"),
+					elem.getAttribute("passwd"),
+					elem.getAttribute("recordsalt")
+				);
+
+				log.info("Creating/updating record for {}", record.url);
+				db.addRecord(user, record);
+			} else {
+				log.info("Unknown user action '{}'", elem.getTagName());
+			}
 		}
 
 		return "mightyfine";
