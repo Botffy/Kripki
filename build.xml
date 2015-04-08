@@ -43,6 +43,16 @@
 		<java classpathref="run.path" classname='hu.ppke.itk.sciar.kripki.server.Server' fork='true'>
 			<assertions enableSystemAssertions="true" >
 				<enable package="hu.ppke.itk.sciar.kripki.server" />
+				<enable package="hu.ppke.itk.sciar.kripki" />
+			</assertions>
+		</java>
+	</target>
+
+	<target name='rundhtest' depends='build, cl-args' description="Minimal tests for the DiffieHellman class">
+		<mkdir dir="${db.dir}" />
+		<java classpathref="run.path" classname='hu.ppke.itk.sciar.kripki.DiffieHellman' fork='true'>
+			<assertions enableSystemAssertions="true" >
+				<enable package="hu.ppke.itk.sciar.kripki" />
 			</assertions>
 		</java>
 	</target>
