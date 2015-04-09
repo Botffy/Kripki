@@ -7,6 +7,7 @@ import net.sf.practicalxml.DomUtil;
 import net.sf.practicalxml.ParseUtil;
 import net.sf.practicalxml.OutputUtil;
 import net.sf.practicalxml.XmlException;
+import net.sf.practicalxml.builder.XmlBuilder;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -29,15 +30,9 @@ public class Server {
 
 		Server server = new Server(db);
 
-		String reply = null;
-		try {
-			Document req = ParseUtil.parse(new String(Files.readAllBytes(Paths.get("example.xml"))));
-			reply = server.handleRequest(req);
-		} catch(XmlException e) {
-			log.info("Malformed XML: {}", e.getMessage());
-			reply = e.getMessage();
-		}
-		System.out.println(reply);
+		Document reply = server.handleRequest(new String(Files.readAllBytes(Paths.get("example.xml"))));
+
+		System.out.println(OutputUtil.indentedString(reply, 2));
 	}
 
 	private final Database db;
@@ -45,12 +40,20 @@ public class Server {
 		this.db = db;
 	}
 
-	public String handleRequest(Document request) {
+	public Document handleRequest(String req) {
+		Document request;
+		try {
+			request = ParseUtil.parse(req);
+		} catch(XmlException e) {
+			log.info("Malformed XML: {}", e.getMessage());
+			return error("xml", e.getMessage());
+		}
+
 		log.info("Authenticating...");
 		Element userElement = request.getDocumentElement();
 		if(!"user".equals(userElement.getTagName())) {
 			log.info("Malformed XML: root element was '{}' (expected 'user')", userElement.getTagName());
-			return "error: malformed";
+			return error("xml", String.format("Malformed XML: root element was named '%s' (expected 'user')", userElement.getTagName()));
 		}
 
 		String username = userElement.getAttribute("name");
@@ -58,7 +61,7 @@ public class Server {
 
 		if(StringUtils.isBlank(username) || StringUtils.isBlank(verifier)) {
 			log.info("Malformed XML: name or verifier blank");
-			return "error: malformed";
+			return error("xml", "Malformed XML: name or verifier was blank");
 		}
 
 		User user = db.getUser(username);
@@ -70,7 +73,7 @@ public class Server {
 			log.info("Authenticated user {}", username);
 		} else {
 			log.info("Authentication failed for {}", username);
-			return "error: auth";
+			return error("user", "Could not authenticate user");
 		}
 
 		for(Element elem : DomUtil.getChildren(userElement)) {
@@ -93,7 +96,10 @@ public class Server {
 	}
 
 
-	private static Document error() {
-		return
+	private static Document error(String type, String message) {
+		return XmlBuilder.element("error",
+			XmlBuilder.attribute("type", type),
+			XmlBuilder.text(message)
+		).toDOM();
 	}
 }
