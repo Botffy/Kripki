@@ -48,10 +48,11 @@
 		</java>
 	</target>
 
-	<target name='rundhtest' depends='build, cl-args' description="Minimal tests for the DiffieHellman class">
+	<target name='runclient' depends='build, cl-args' description="Run a client">
 		<mkdir dir="${db.dir}" />
-		<java classpathref="run.path" classname='hu.ppke.itk.sciar.kripki.DiffieHellman' fork='true'>
+		<java classpathref="run.path" classname='hu.ppke.itk.sciar.kripki.client.Client' fork='true'>
 			<assertions enableSystemAssertions="true" >
+				<enable package="hu.ppke.itk.sciar.kripki.client" />
 				<enable package="hu.ppke.itk.sciar.kripki" />
 			</assertions>
 		</java>

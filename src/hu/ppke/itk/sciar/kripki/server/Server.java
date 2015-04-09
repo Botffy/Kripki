@@ -1,7 +1,7 @@
 package hu.ppke.itk.sciar.kripki.server;
 
-import java.nio.file.*;
-import java.nio.charset.StandardCharsets;
+import java.net.*;
+import java.io.*;
 import org.w3c.dom.*;
 import net.sf.practicalxml.DomUtil;
 import net.sf.practicalxml.ParseUtil;
@@ -19,25 +19,40 @@ public class Server {
 	private final static Logger log = LoggerFactory.getLogger("Root.SERVER");
 
 	public static void main(String[] args) throws Exception {
-		System.out.println("Server started.");
 		Database db = new XMLDatabase("db/users.xml", "db/users");
-		System.out.println("Database open.");
+		log.info("XMLDatabase open.");
 
-		// expect conn
-		//  DH exchange
-		// expect auth
-		// 		reply with all records
+		int port = 1294;
+		ServerSocket socket = new ServerSocket(port);
+		log.info("Server started, listening on port {}", port);
 
-		Server server = new Server(db);
+		Socket client = socket.accept();
+		log.info("Accepted client connection from {}", client.getRemoteSocketAddress());
 
-		Document reply = server.handleRequest(new String(Files.readAllBytes(Paths.get("example.xml"))));
+		Server server = new Server(client, db);
 
-		System.out.println(OutputUtil.indentedString(reply, 2));
+		log.info("Closing server");
 	}
 
 	private final Database db;
-	private Server(Database db) {
+	private final Socket client;
+	private Server(Socket client, Database db) throws IOException {
+		assert client.isConnected();
 		this.db = db;
+		this.client = client;
+
+		DataOutputStream out = new DataOutputStream(client.getOutputStream());
+		DataInputStream in = new DataInputStream(client.getInputStream());
+
+		// expect len + lensize xml
+		int len = in.readInt();
+		log.trace("Expect {} bytes of message", len);
+		byte[] msg = new byte[len];
+		int got = in.read(msg, 0, len);
+		log.trace("Got {} bytes of message", got);
+		Document reply = handleRequest(new String(msg, java.nio.charset.StandardCharsets.UTF_8));
+		System.out.println(OutputUtil.indentedString(reply, 2));
+		log.info("Reply sent");
 	}
 
 	public Document handleRequest(String req) {
