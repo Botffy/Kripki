@@ -1,7 +1,9 @@
 package hu.ppke.itk.sciar.kripki.server;
 
+import hu.ppke.itk.sciar.kripki.*;
 import java.net.*;
 import java.io.*;
+import java.math.BigInteger;
 import org.w3c.dom.*;
 import net.sf.practicalxml.DomUtil;
 import net.sf.practicalxml.ParseUtil;
@@ -10,6 +12,7 @@ import net.sf.practicalxml.XmlException;
 import net.sf.practicalxml.builder.XmlBuilder;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.codec.binary.Hex;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,26 +47,31 @@ public class Server {
 		DataOutputStream out = new DataOutputStream(client.getOutputStream());
 		DataInputStream in = new DataInputStream(client.getInputStream());
 
-		byte[] reply = serializeXML(
-			handleRequest(new String(readMessage(in), java.nio.charset.StandardCharsets.UTF_8)))
-			.getBytes(java.nio.charset.StandardCharsets.UTF_8
+		log.info("Expecting Diffie-Hellman initialization");
+
+		Document dhInit = Protocol.readXmlMessage(in);
+		int modulusBit = Integer.valueOf(DomUtil.getText(DomUtil.getChild(dhInit.getDocumentElement(), "modulus")));
+		DiffieHellman dh = new DiffieHellman(modulusBit, 2);
+
+		log.debug("Replying with our result");
+		Protocol.writeMessage(out,
+			XmlBuilder.element("dh",
+				XmlBuilder.element("step", XmlBuilder.text("2")),
+				XmlBuilder.element("myresult", XmlBuilder.text(dh.myResult().toString(10)))
+			).toDOM()
 		);
-		out.writeInt(reply.length);
-		out.write(reply, 0, reply.length);
-		log.info("Reply sent");
-	}
+		log.debug("Waiting for their result");
+		Document dhReply = Protocol.readXmlMessage(in);
+		BigInteger theirResult = new BigInteger(DomUtil.getText(DomUtil.getChild(dhReply.getDocumentElement(), "myresult")), 10);
+		log.info("Successfully agreed on shared key: {}", Hex.encodeHexString( Protocol.sharedKey(dh.sharedSecret(theirResult)) ));
 
-	private static String serializeXML(Document dom) {
-		return String.format("%s\n%s", "<?xml version='1.0' encoding='UTF-8' ?>", OutputUtil.indentedString(dom, 3));
-	}
 
-	private static byte[] readMessage(DataInputStream in) throws IOException {
-		int len = in.readInt();
-		log.trace("Expect {} bytes of message", len);
-		byte[] msg = new byte[len];
-		int got = in.read(msg, 0, len);
-		log.trace("Got {} bytes of message", got);
-		return msg;
+/*
+		String reply = Protocol.serializeXML(
+			handleRequest(Protocol.readStringMessage(in))
+		);
+		Protocol.writeMessage(out, reply);
+*/
 	}
 
 	public Document handleRequest(String req) {

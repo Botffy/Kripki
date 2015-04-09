@@ -56,8 +56,9 @@ public class DiffieHellman {
 
 	private static final Map<Integer, BigInteger> moduli = DiffieHellman.loadModuli("res/DHMods.txt");
 	private final Random rand = new SecureRandom();
-	private final BigInteger primitiveElement;
-	private final BigInteger modulus;
+	public final BigInteger primitiveElement;
+	public final BigInteger modulus;
+	public final int modulusBit;
 	private final BigInteger secret;
 	private final BigInteger result;
 
@@ -66,6 +67,7 @@ public class DiffieHellman {
 	}
 
 	public DiffieHellman(int modulusBit, BigInteger primitiveElement) {
+		this.modulusBit = modulusBit;
 		this.primitiveElement = primitiveElement;
 
 		if(!moduli.containsKey(modulusBit)) throw new IllegalArgumentException(String.format("I don't know a DH modulus of size %d", modulusBit));
@@ -81,5 +83,9 @@ public class DiffieHellman {
 
 	public BigInteger sharedSecret(BigInteger otherResult) {
 		return otherResult.modPow(secret, modulus);  // (a^x_i)^x_j mod m = a^(x_i*x_j) mod m
+	}
+
+	public int modulusBitLength() {
+		return modulusBit;
 	}
 }
