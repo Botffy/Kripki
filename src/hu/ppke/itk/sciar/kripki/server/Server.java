@@ -89,6 +89,11 @@ public class Server {
 			}
 		}
 
-		return "mightyfine";
+		return db.allRecords(user);
+	}
+
+
+	private static Document error() {
+		return
 	}
 }

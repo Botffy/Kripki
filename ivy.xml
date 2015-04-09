@@ -3,7 +3,7 @@
 	<info organisation="hu.ppke.itk.sciar" module="kripki"/>
 	<dependencies>
 		<dependency org="org.apache.commons" name="commons-lang3" rev="3.3.2"/>
-		<dependency org="net.sf.practicalxml" name="practicalxml" rev="1.1.0"/>
+		<dependency org="net.sf.practicalxml" name="practicalxml" rev="1.1.18"/>
 		<dependency org="net.sf.jopt-simple" name="jopt-simple" rev="4.7"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.7"/>
 		<dependency org="ch.qos.logback" name="logback-classic" rev="1.1.2" />

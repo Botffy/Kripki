@@ -14,6 +14,8 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import net.sf.practicalxml.ParseUtil;
+
 
 class XMLDatabase implements Database {
 	private final Document doc;
@@ -139,12 +141,12 @@ class XMLDatabase implements Database {
 		flush(udoc, new File(usersLib, user.name+".xml"));
 	}
 
-	@Override public String allRecords(User user) {
+	@Override public Document allRecords(User user) {
 		assert userAuth(user);
 
 		try {
-			return new Scanner(getUserFile(user)).useDelimiter("\\Z").next();
-		} catch(java.io.FileNotFoundException e) {
+			return ParseUtil.parse(getUserFile(user));
+		} catch(Exception e) {
 			throw new RuntimeException("This should never happen", e);
 		}
 	}
