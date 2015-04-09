@@ -9,6 +9,8 @@ import java.nio.file.*;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.*;
 import java.math.BigInteger;
+import java.util.Random;
+import java.security.SecureRandom;
 import org.apache.commons.lang3.StringUtils;
 
 
@@ -51,24 +53,33 @@ public class DiffieHellman {
 		return Result;
 	}
 
-	public static void main(String[] args) throws Exception  {
-		Map<Integer, BigInteger> moduli = loadModuli("res/DHmods.txt");
-		for(Map.Entry<Integer, BigInteger> entry : moduli.entrySet()) {
-			System.out.println(entry.getKey());
-			System.out.println(entry.getValue());
-		}
-	}
 
 	private static final Map<Integer, BigInteger> moduli = DiffieHellman.loadModuli("res/DHMods.txt");
-
-
-	private final int primitiveElement;
+	private final Random rand = new SecureRandom();
+	private final BigInteger primitiveElement;
 	private final BigInteger modulus;
+	private final BigInteger secret;
+	private final BigInteger result;
+
 	public DiffieHellman(int modulusBit, int primitiveElement) {
+		this(modulusBit, BigInteger.valueOf(primitiveElement));
+	}
+
+	public DiffieHellman(int modulusBit, BigInteger primitiveElement) {
 		this.primitiveElement = primitiveElement;
 
-		if(moduli.containsKey(modulusBit)) throw new IllegalArgumentException(String.format("I don't know a DH modulus of size %d", modulusBit));
+		if(!moduli.containsKey(modulusBit)) throw new IllegalArgumentException(String.format("I don't know a DH modulus of size %d", modulusBit));
 
 		this.modulus = moduli.get(modulusBit);
+		this.secret = new BigInteger(256, rand);
+		this.result = primitiveElement.modPow(secret, modulus);   // a^x_i mod m
+	}
+
+	public BigInteger myResult() {
+		return result;
+	}
+
+	public BigInteger sharedSecret(BigInteger otherResult) {
+		return otherResult.modPow(secret, modulus);  // (a^x_i)^x_j mod m = a^(x_i*x_j) mod m
 	}
 }
