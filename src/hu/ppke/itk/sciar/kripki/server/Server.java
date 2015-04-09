@@ -44,15 +44,26 @@ public class Server {
 		DataOutputStream out = new DataOutputStream(client.getOutputStream());
 		DataInputStream in = new DataInputStream(client.getInputStream());
 
-		// expect len + lensize xml
+		byte[] reply = serializeXML(
+			handleRequest(new String(readMessage(in), java.nio.charset.StandardCharsets.UTF_8)))
+			.getBytes(java.nio.charset.StandardCharsets.UTF_8
+		);
+		out.writeInt(reply.length);
+		out.write(reply, 0, reply.length);
+		log.info("Reply sent");
+	}
+
+	private static String serializeXML(Document dom) {
+		return String.format("%s\n%s", "<?xml version='1.0' encoding='UTF-8' ?>", OutputUtil.indentedString(dom, 3));
+	}
+
+	private static byte[] readMessage(DataInputStream in) throws IOException {
 		int len = in.readInt();
 		log.trace("Expect {} bytes of message", len);
 		byte[] msg = new byte[len];
 		int got = in.read(msg, 0, len);
 		log.trace("Got {} bytes of message", got);
-		Document reply = handleRequest(new String(msg, java.nio.charset.StandardCharsets.UTF_8));
-		System.out.println(OutputUtil.indentedString(reply, 2));
-		log.info("Reply sent");
+		return msg;
 	}
 
 	public Document handleRequest(String req) {

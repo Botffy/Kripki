@@ -5,6 +5,10 @@ import java.io.*;
 import java.net.*;
 import java.nio.file.*;
 import java.nio.charset.StandardCharsets;
+import org.w3c.dom.*;
+import net.sf.practicalxml.ParseUtil;
+import net.sf.practicalxml.OutputUtil;
+import net.sf.practicalxml.XmlException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,10 +33,21 @@ public class Client {
 			out.writeInt(msg.length);
 			out.write(msg, 0, msg.length);
 
+			log.info("Awaiting reply.");
+			int len = in.readInt();
+			log.trace("Expect {} bytes of message", len);
+			msg = new byte[len];
+			int got = in.read(msg, 0, len);
+			log.trace("Got {} bytes of message", got);
 
+			Document reply = ParseUtil.parse(new String(msg, StandardCharsets.UTF_8));
+			log.debug("Got reply.");
+
+			System.out.println(OutputUtil.indentedString(reply, 3));
 		} catch(ConnectException e) {
 			log.info("Couldn't connect to {}:{} ('{}')", host, port, e.getMessage());
-			System.out.println(String.format("Couldn't connect to %s:%d: '%s'", host, port, e.getMessage()));
+		} catch(XmlException e) {
+			log.error("Got malformed XML from the server");
 		}
 	}
 }
