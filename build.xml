@@ -58,6 +58,24 @@
 		</java>
 	</target>
 
+	<target name='run-more-clients' depends='build, cl-args' description="Run two clients in parallel">
+		<mkdir dir="${db.dir}" />
+		<parallel>
+			<java classpathref="run.path" classname='hu.ppke.itk.sciar.kripki.client.Client' fork='true'>
+				<assertions enableSystemAssertions="true" >
+					<enable package="hu.ppke.itk.sciar.kripki.client" />
+					<enable package="hu.ppke.itk.sciar.kripki" />
+				</assertions>
+			</java>
+			<java classpathref="run.path" classname='hu.ppke.itk.sciar.kripki.client.Client' fork='true'>
+				<assertions enableSystemAssertions="true" >
+					<enable package="hu.ppke.itk.sciar.kripki.client" />
+					<enable package="hu.ppke.itk.sciar.kripki" />
+				</assertions>
+			</java>
+		</parallel>
+	</target>
+
 	<target name="cl-args" unless="args">
 		<property name="args" value="" />
 	</target>
