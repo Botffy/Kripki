@@ -39,34 +39,35 @@ public class Server {
 
 	private final Database db;
 	private final Socket client;
-	private final DataOutputStream out;
-	private final DataInputStream in;
+	private final Channel channel;
 	private final byte[] sharedKey;
 	private Server(Socket client, Database db) throws IOException {
 		assert client.isConnected();
 
 		this.db = db;
 		this.client = client;
-		this.out = new DataOutputStream(client.getOutputStream());
-		this.in = new DataInputStream(client.getInputStream());
+		this.channel = new Channel(
+			new DataInputStream(client.getInputStream()),
+			new DataOutputStream(client.getOutputStream())
+		);
 
 		log.info("Expecting Diffie-Hellman initialization");
 
-		Document dhInit = Protocol.readXmlMessage(in);
+		Document dhInit = channel.readMessage();
 		int modulusBit = Integer.valueOf(DomUtil.getText(DomUtil.getChild(dhInit.getDocumentElement(), "modulus")));
 		DiffieHellman dh = new DiffieHellman(modulusBit, 2);
 
 		log.debug("Replying with our result");
-		Protocol.writeMessage(out,
+		channel.writeMessage(
 			XmlBuilder.element("dh",
 				XmlBuilder.element("step", XmlBuilder.text("2")),
 				XmlBuilder.element("myresult", XmlBuilder.text(dh.myResult().toString(10)))
 			).toDOM()
 		);
 		log.debug("Waiting for their result");
-		Document dhReply = Protocol.readXmlMessage(in);
+		Document dhReply = channel.readMessage();
 		BigInteger theirResult = new BigInteger(DomUtil.getText(DomUtil.getChild(dhReply.getDocumentElement(), "myresult")), 10);
-		this.sharedKey = Protocol.sharedKey(dh.sharedSecret(theirResult));
+		this.sharedKey = channel.sharedKey(dh.sharedSecret(theirResult));
 		log.info("Successfully agreed on shared key: {}", Hex.encodeHexString( sharedKey ));
 
 		while(true) {
@@ -83,13 +84,13 @@ public class Server {
 		assert client.isConnected();
 		assert sharedKey != null;
 
-		Document request = Protocol.readCipheredXml(in, sharedKey);
+		Document request = channel.readCipheredXml(sharedKey);
 
 		log.info("Authenticating...");
 		Element userElement = request.getDocumentElement();
 		if(!"user".equals(userElement.getTagName())) {
 			log.info("Malformed XML: root element was '{}' (expected 'user')", userElement.getTagName());
-			Protocol.writeCiphered(out, error("xml", String.format("Malformed XML: root element was named '%s' (expected 'user')", userElement.getTagName())), sharedKey);
+			channel.writeCiphered(error("xml", String.format("Malformed XML: root element was named '%s' (expected 'user')", userElement.getTagName())), sharedKey);
 			return;
 		}
 
@@ -98,7 +99,7 @@ public class Server {
 
 		if(StringUtils.isBlank(username) || StringUtils.isBlank(verifier)) {
 			log.info("Malformed XML: name or verifier blank");
-			Protocol.writeCiphered(out, error("xml", "Malformed XML: name or verifier was blank"), sharedKey);
+			channel.writeCiphered(error("xml", "Malformed XML: name or verifier was blank"), sharedKey);
 			return;
 		}
 
@@ -111,7 +112,7 @@ public class Server {
 			log.info("Authenticated user {}", username);
 		} else {
 			log.info("Authentication failed for {}", username);
-			Protocol.writeCiphered(out, error("user", "Could not authenticate user"), sharedKey);
+			channel.writeCiphered(error("user", "Could not authenticate user"), sharedKey);
 			return;
 		}
 
@@ -131,7 +132,7 @@ public class Server {
 			}
 		}
 
-		Protocol.writeCiphered(out, db.allRecords(user), sharedKey);
+		channel.writeCiphered(db.allRecords(user), sharedKey);
 	}
 
 

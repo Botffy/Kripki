@@ -33,8 +33,7 @@ public class Client {
 	}
 
 	private Socket socket;
-	private DataOutputStream out;
-	private DataInputStream in;
+	private Channel channel;
 	private byte[] sharedKey = null;
 	public Client() {
 	}
@@ -45,8 +44,10 @@ public class Client {
 		try {
 			log.info("Connecting to {}:{}...", host, port);
 			this.socket = new Socket(host, port);
-			this.out = new DataOutputStream(socket.getOutputStream());
-			this.in = new DataInputStream(socket.getInputStream());
+			this.channel = new Channel(
+				new DataInputStream(socket.getInputStream()),
+				new DataOutputStream(socket.getOutputStream())
+			);
 			log.debug("Connected.");
 		} catch(SocketException e) {
 			log.error("Couldn't connect to {}:{} ('{}')", host, port, e.getMessage());
@@ -58,23 +59,23 @@ public class Client {
 
 		try {
 			log.info("Initiating Diffie-Hellman key exchange...");
-			Protocol.writeMessage(out,
+			channel.writeMessage(
 				XmlBuilder.element("dh",
 					XmlBuilder.element("step", XmlBuilder.text("1")),
 					XmlBuilder.element("modulus", XmlBuilder.text(Integer.toString(dh.modulusBitLength())))
 				).toDOM()
 			);
 			log.debug("Getting server's reply...");
-			Document dhReply = Protocol.readXmlMessage(in);
+			Document dhReply = channel.readMessage();
 			BigInteger theirResult = new BigInteger(DomUtil.getText(DomUtil.getChild(dhReply.getDocumentElement(), "myresult")), 10);
 			log.debug("Sending our result...");
-			Protocol.writeMessage(out,
+			channel.writeMessage(
 				XmlBuilder.element("dh",
 					XmlBuilder.element("step", XmlBuilder.text("3")),
 					XmlBuilder.element("myresult", XmlBuilder.text(dh.myResult().toString(10)))
 				).toDOM()
 			);
-			sharedKey = Protocol.sharedKey(dh.sharedSecret(theirResult));
+			sharedKey = channel.sharedKey(dh.sharedSecret(theirResult));
 			log.info("Successfully agreed on shared key: {}", Hex.encodeHexString( sharedKey ));
 
 		} catch(Exception e) {
@@ -90,8 +91,7 @@ public class Client {
 		assert sharedKey != null;
 
 		log.info("Requesting data for {}", user);
-		Protocol.writeCiphered(
-			out,
+		channel.writeCiphered(
 			XmlBuilder.element("user",
 				XmlBuilder.attribute("name", user.name),
 				XmlBuilder.attribute("verifier", user.verifier)
@@ -100,7 +100,7 @@ public class Client {
 		);
 		log.info("Fetching reply...");
 
-		return Protocol.readCipheredXml(in, sharedKey);
+		return channel.readCipheredXml(sharedKey);
 	}
 
 	public Document addRecord(User user, Record record) throws IOException {
@@ -108,8 +108,7 @@ public class Client {
 		assert sharedKey != null;
 
 		log.info("Sending new record {} for user {}", record, user);
-		Protocol.writeCiphered(
-			out,
+		channel.writeCiphered(
 			XmlBuilder.element("user",
 				XmlBuilder.attribute("name", user.name),
 				XmlBuilder.attribute("verifier", user.verifier),
@@ -124,6 +123,6 @@ public class Client {
 		);
 		log.info("Fetching reply...");
 
-		return Protocol.readCipheredXml(in, sharedKey);
+		return channel.readCipheredXml(sharedKey);
 	}
 }

@@ -15,47 +15,44 @@ import net.sf.practicalxml.OutputUtil;
 import net.sf.practicalxml.ParseUtil;
 
 
-public class Protocol {
-	private Protocol() {}
+public class Channel {
+	private final Random rand = new SecureRandom();
+	private final DataInputStream in;
+	private final DataOutputStream out;
+	public Channel(DataInputStream in, DataOutputStream out) {
+		this.in = in;
+		this.out = out;
+	}
 
-	public static byte[] readMessage(DataInputStream in) throws IOException {
+	private byte[] readBytes() throws IOException {
 		int len = in.readInt();
 		byte[] msg = new byte[len];
 		int got = in.read(msg, 0, len);
 		return msg;
 	}
 
-	public static String readStringMessage(DataInputStream in) throws IOException {
-		return new String(Protocol.readMessage(in), java.nio.charset.StandardCharsets.UTF_8);
-	}
-
-	public static Document readXmlMessage(DataInputStream in) throws IOException {
-		return  ParseUtil.parse(readStringMessage(in));
-	}
-
-	public static void writeMessage(DataOutputStream out, byte[] msg) throws IOException {
+	private void writeBytes(byte[] msg) throws IOException {
 		out.writeInt(msg.length);
 		out.write(msg, 0, msg.length);
 	}
 
-	public static void writeMessage(DataOutputStream out, String msg) throws IOException {
-		writeMessage(out, msg.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-	}
-
-	public static void writeMessage(DataOutputStream out, Document msg) throws IOException {
-		writeMessage(out, (serializeXML(msg)).getBytes(java.nio.charset.StandardCharsets.UTF_8));
-	}
-
-	public static String serializeXML(Document dom) {
+	private String serializeXML(Document dom) {
 		return String.format("%s\n%s", "<?xml version='1.0' encoding='UTF-8' ?>", OutputUtil.indentedString(dom, 3));
 	}
 
-	public static byte[] sharedKey(BigInteger sharedSecret) {
+	public Document readMessage() throws IOException {
+		return ParseUtil.parse(new String(readBytes(), java.nio.charset.StandardCharsets.UTF_8));
+	}
+
+	public void writeMessage(Document msg) throws IOException {
+		writeBytes((serializeXML(msg)).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+	}
+
+	public byte[] sharedKey(BigInteger sharedSecret) {
 		return Arrays.copyOf(DigestUtils.sha1(sharedSecret.toByteArray()), 16);
 	}
 
-	private static Random rand = new SecureRandom();
-	public static void writeCiphered(DataOutputStream out, Document msg, byte[] key) throws IOException {
+	public void writeCiphered(Document msg, byte[] key) throws IOException {
 		assert key.length == 16;
 
 		try {
@@ -68,13 +65,13 @@ public class Protocol {
 			cipher.init(Cipher.ENCRYPT_MODE, keySpec, new IvParameterSpec(iv));
 
 			out.write(iv, 0, 16);
-			writeMessage(out, cipher.doFinal(input));
+			writeBytes(cipher.doFinal(input));
 		} catch(GeneralSecurityException e) {
 			throw new RuntimeException(String.format("Enciphering error: '%s'", e.getMessage()), e);
 		}
 	}
 
-	public static Document readCipheredXml(DataInputStream in, byte[] key) throws IOException {
+	public Document readCipheredXml(byte[] key) throws IOException {
 		assert key.length == 16;
 
 		try {
