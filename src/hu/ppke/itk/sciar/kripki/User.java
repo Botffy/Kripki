@@ -1,7 +1,7 @@
-package hu.ppke.itk.sciar.kripki.server;
+package hu.ppke.itk.sciar.kripki;
 
 
-class User {
+public class User {
 	public final String name;
 	public final String verifier;
 
