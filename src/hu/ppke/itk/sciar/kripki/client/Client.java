@@ -24,7 +24,10 @@ public class Client {
 	public static void main(String[] args) throws Exception {
 		Client client = new Client();
 		client.connect("localhost", 1294);
-		Document data = client.getData("mormota", "atomrom");
+		Document data = client.addRecord(
+			new User("mormota", "atomrom"),
+			new Record("hottentotta.hu", "mormó", "1234?", "salt")
+		);
 
 		System.out.println(OutputUtil.indentedString(data, 3));
 	}
@@ -82,7 +85,7 @@ public class Client {
 	return true;
 	}
 
-	public Document getData(String user, String verifier) throws IOException {
+	public Document getData(User user) throws IOException {
 		assert socket!=null && socket.isConnected();
 		assert sharedKey != null;
 
@@ -90,8 +93,32 @@ public class Client {
 		Protocol.writeCiphered(
 			out,
 			XmlBuilder.element("user",
-				XmlBuilder.attribute("name", user),
-				XmlBuilder.attribute("verifier", verifier)
+				XmlBuilder.attribute("name", user.name),
+				XmlBuilder.attribute("verifier", user.verifier)
+			).toDOM(),
+			sharedKey
+		);
+		log.info("Fetching reply...");
+
+		return Protocol.readCipheredXml(in, sharedKey);
+	}
+
+	public Document addRecord(User user, Record record) throws IOException {
+		assert socket != null && socket.isConnected();
+		assert sharedKey != null;
+
+		log.info("Sending new record {} for user {}", record, user);
+		Protocol.writeCiphered(
+			out,
+			XmlBuilder.element("user",
+				XmlBuilder.attribute("name", user.name),
+				XmlBuilder.attribute("verifier", user.verifier),
+				XmlBuilder.element("record",
+					XmlBuilder.attribute("url", record.url),
+					XmlBuilder.attribute("username", record.username),
+					XmlBuilder.attribute("passwd", record.password),
+					XmlBuilder.attribute("recordsalt", record.salt)
+				)
 			).toDOM(),
 			sharedKey
 		);

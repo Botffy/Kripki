@@ -16,6 +16,6 @@ public class Record {
 	}
 
 	@Override public String toString() {
-		return String.format("url=%s username=%s password=%s salt=%s", url, username, password, salt);
+		return String.format("(url=%s username=%s password=%s salt=%s)", url, username, password, salt);
 	}
 }
