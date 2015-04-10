@@ -153,6 +153,7 @@ class XMLDatabase implements Database {
 
 	private void flush(Document document, File file) {
 		try {
+			document.setXmlStandalone(true);
 			transformer.transform(new DOMSource(document), new StreamResult(file));
 			System.out.println(String.format("Data flushed to %s.", file));
 		} catch(TransformerException e) {
