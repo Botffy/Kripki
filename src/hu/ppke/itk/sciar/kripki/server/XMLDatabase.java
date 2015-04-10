@@ -1,6 +1,6 @@
 package hu.ppke.itk.sciar.kripki.server;
 
-
+import hu.ppke.itk.sciar.kripki.*;
 import java.io.File;
 import java.util.Scanner;
 import org.w3c.dom.*;

@@ -1,5 +1,7 @@
 package hu.ppke.itk.sciar.kripki.server;
 
+import hu.ppke.itk.sciar.kripki.*;
+
 
 interface Database {
 	public User getUser(String name);

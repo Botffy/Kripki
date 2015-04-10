@@ -1,7 +1,7 @@
-package hu.ppke.itk.sciar.kripki.server;
+package hu.ppke.itk.sciar.kripki;
 
 
-class Record {
+public class Record {
 	public final String url;
 	public final String username;
 	public final String password;
