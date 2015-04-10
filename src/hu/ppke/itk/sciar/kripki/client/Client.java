@@ -26,7 +26,7 @@ public class Client {
 		client.connect("localhost", 1294);
 		Document data = client.getData("mormota", "atomrom");
 
-		System.out.println(OutputUtil.indentedString(reply, 3));
+		System.out.println(OutputUtil.indentedString(data, 3));
 	}
 
 	private Socket socket;
