@@ -7,6 +7,6 @@
 		<dependency org="net.sf.practicalxml" name="practicalxml" rev="1.1.18"/>
 		<dependency org="net.sf.jopt-simple" name="jopt-simple" rev="4.7"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.7"/>
-		<dependency org="ch.qos.logback" name="logback-classic" rev="1.1.2" />
+		<dependency org="org.slf4j" name="slf4j-simple" rev="1.7.7"/>
 	</dependencies>
 </ivy-module>
