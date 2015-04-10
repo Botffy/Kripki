@@ -24,22 +24,26 @@ public class Client {
 	public static void main(String[] args) throws Exception {
 		Client client = new Client();
 		client.connect("localhost", 1294);
+		Document data = client.getData("mormota", "atomrom");
+
+		System.out.println(OutputUtil.indentedString(reply, 3));
 	}
 
-	private DiffieHellman dh;
+	private Socket socket;
+	private DataOutputStream out;
+	private DataInputStream in;
+	private byte[] sharedKey = null;
 	public Client() {
 	}
 
 	public boolean connect(String host, int port) {
-		this.dh = new DiffieHellman(1024, 2);
+		DiffieHellman dh = new DiffieHellman(1024, 2);
 
-		DataOutputStream out;
-		DataInputStream in;
 		try {
 			log.info("Connecting to {}:{}...", host, port);
-			Socket socket = new Socket(host, port);
-			out = new DataOutputStream(socket.getOutputStream());
-			in = new DataInputStream(socket.getInputStream());
+			this.socket = new Socket(host, port);
+			this.out = new DataOutputStream(socket.getOutputStream());
+			this.in = new DataInputStream(socket.getInputStream());
 			log.debug("Connected.");
 		} catch(SocketException e) {
 			log.error("Couldn't connect to {}:{} ('{}')", host, port, e.getMessage());
@@ -54,7 +58,7 @@ public class Client {
 			Protocol.writeMessage(out,
 				XmlBuilder.element("dh",
 					XmlBuilder.element("step", XmlBuilder.text("1")),
-					XmlBuilder.element("modulus", XmlBuilder.text(Integer.toString(this.dh.modulusBitLength())))
+					XmlBuilder.element("modulus", XmlBuilder.text(Integer.toString(dh.modulusBitLength())))
 				).toDOM()
 			);
 			log.debug("Getting server's reply...");
@@ -67,7 +71,8 @@ public class Client {
 					XmlBuilder.element("myresult", XmlBuilder.text(dh.myResult().toString(10)))
 				).toDOM()
 			);
-			log.info("Successfully agreed on shared key: {}", Hex.encodeHexString( Protocol.sharedKey(dh.sharedSecret(theirResult)) ));
+			sharedKey = Protocol.sharedKey(dh.sharedSecret(theirResult));
+			log.info("Successfully agreed on shared key: {}", Hex.encodeHexString( sharedKey ));
 
 		} catch(Exception e) {
 			log.error("Couldn't do DH key-exchange: {}", e.getMessage());
@@ -77,23 +82,21 @@ public class Client {
 	return true;
 	}
 
+	public Document getData(String user, String verifier) throws IOException {
+		assert socket!=null && socket.isConnected();
+		assert sharedKey != null;
 
-/*
-			log.info("Sending testdata.");
-			byte[] msg = Files.readAllBytes(Paths.get("example.xml"));
-			out.writeInt(msg.length);
-			out.write(msg, 0, msg.length);
+		log.info("Requesting data for {}", user);
+		Protocol.writeCiphered(
+			out,
+			XmlBuilder.element("user",
+				XmlBuilder.attribute("name", user),
+				XmlBuilder.attribute("verifier", verifier)
+			).toDOM(),
+			sharedKey
+		);
+		log.info("Fetching reply...");
 
-			log.info("Awaiting reply.");
-			int len = in.readInt();
-			log.trace("Expect {} bytes of message", len);
-			msg = new byte[len];
-			int got = in.read(msg, 0, len);
-			log.trace("Got {} bytes of message", got);
-
-			Document reply = ParseUtil.parse(new String(msg, StandardCharsets.UTF_8));
-			log.debug("Got reply.");
-
-			System.out.println(OutputUtil.indentedString(reply, 3));
-*/
+		return Protocol.readCipheredXml(in, sharedKey);
+	}
 }

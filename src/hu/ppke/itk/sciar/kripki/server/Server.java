@@ -39,13 +39,16 @@ public class Server {
 
 	private final Database db;
 	private final Socket client;
+	private final DataOutputStream out;
+	private final DataInputStream in;
+	private final byte[] sharedKey;
 	private Server(Socket client, Database db) throws IOException {
 		assert client.isConnected();
+
 		this.db = db;
 		this.client = client;
-
-		DataOutputStream out = new DataOutputStream(client.getOutputStream());
-		DataInputStream in = new DataInputStream(client.getInputStream());
+		this.out = new DataOutputStream(client.getOutputStream());
+		this.in = new DataInputStream(client.getInputStream());
 
 		log.info("Expecting Diffie-Hellman initialization");
 
@@ -63,31 +66,31 @@ public class Server {
 		log.debug("Waiting for their result");
 		Document dhReply = Protocol.readXmlMessage(in);
 		BigInteger theirResult = new BigInteger(DomUtil.getText(DomUtil.getChild(dhReply.getDocumentElement(), "myresult")), 10);
-		log.info("Successfully agreed on shared key: {}", Hex.encodeHexString( Protocol.sharedKey(dh.sharedSecret(theirResult)) ));
+		this.sharedKey = Protocol.sharedKey(dh.sharedSecret(theirResult));
+		log.info("Successfully agreed on shared key: {}", Hex.encodeHexString( sharedKey ));
 
-
-/*
-		String reply = Protocol.serializeXML(
-			handleRequest(Protocol.readStringMessage(in))
-		);
-		Protocol.writeMessage(out, reply);
-*/
+		while(true) {
+			try {
+				handleRequest();
+			} catch(IOException e) {
+				log.info("Carrier lost");
+				break;
+			}
+		}
 	}
 
-	public Document handleRequest(String req) {
-		Document request;
-		try {
-			request = ParseUtil.parse(req);
-		} catch(XmlException e) {
-			log.info("Malformed XML: {}", e.getMessage());
-			return error("xml", e.getMessage());
-		}
+	public void handleRequest() throws IOException {
+		assert client.isConnected();
+		assert sharedKey != null;
+
+		Document request = Protocol.readCipheredXml(in, sharedKey);
 
 		log.info("Authenticating...");
 		Element userElement = request.getDocumentElement();
 		if(!"user".equals(userElement.getTagName())) {
 			log.info("Malformed XML: root element was '{}' (expected 'user')", userElement.getTagName());
-			return error("xml", String.format("Malformed XML: root element was named '%s' (expected 'user')", userElement.getTagName()));
+			Protocol.writeCiphered(out, error("xml", String.format("Malformed XML: root element was named '%s' (expected 'user')", userElement.getTagName())), sharedKey);
+			return;
 		}
 
 		String username = userElement.getAttribute("name");
@@ -95,7 +98,8 @@ public class Server {
 
 		if(StringUtils.isBlank(username) || StringUtils.isBlank(verifier)) {
 			log.info("Malformed XML: name or verifier blank");
-			return error("xml", "Malformed XML: name or verifier was blank");
+			Protocol.writeCiphered(out, error("xml", "Malformed XML: name or verifier was blank"), sharedKey);
+			return;
 		}
 
 		User user = db.getUser(username);
@@ -107,7 +111,8 @@ public class Server {
 			log.info("Authenticated user {}", username);
 		} else {
 			log.info("Authentication failed for {}", username);
-			return error("user", "Could not authenticate user");
+			Protocol.writeCiphered(out, error("user", "Could not authenticate user"), sharedKey);
+			return;
 		}
 
 		for(Element elem : DomUtil.getChildren(userElement)) {
@@ -126,7 +131,7 @@ public class Server {
 			}
 		}
 
-		return db.allRecords(user);
+		Protocol.writeCiphered(out, db.allRecords(user), sharedKey);
 	}
 
 
