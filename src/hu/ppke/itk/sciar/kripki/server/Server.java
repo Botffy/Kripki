@@ -18,7 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class Server {
+public class Server implements Runnable {
 	private final static Logger log = LoggerFactory.getLogger("Root.SERVER");
 
 	public static void main(String[] args) throws Exception {
@@ -29,18 +29,17 @@ public class Server {
 		ServerSocket socket = new ServerSocket(port);
 		log.info("Server started, listening on port {}", port);
 
-		Socket client = socket.accept();
-		log.info("Accepted client connection from {}", client.getRemoteSocketAddress());
-
-		Server server = new Server(client, db);
-
-		log.info("Closing server");
+		while(true) {
+			Socket client = socket.accept();
+			log.info("Accepted client connection from {}", client.getRemoteSocketAddress());
+			(new Thread(new Server(client, db))).start();
+		}
 	}
 
 	private final Database db;
 	private final Socket client;
 	private final Channel channel;
-	private final byte[] sharedKey;
+	private byte[] sharedKey;
 	private Server(Socket client, Database db) throws IOException {
 		assert client.isConnected();
 
@@ -50,33 +49,35 @@ public class Server {
 			new DataInputStream(client.getInputStream()),
 			new DataOutputStream(client.getOutputStream())
 		);
+		log.info("Started new thread to handle connection with {}", client.getRemoteSocketAddress());
+	}
 
+	public void run() {
 		log.info("Expecting Diffie-Hellman initialization");
 
-		Document dhInit = channel.readMessage();
-		int modulusBit = Integer.valueOf(DomUtil.getText(DomUtil.getChild(dhInit.getDocumentElement(), "modulus")));
-		DiffieHellman dh = new DiffieHellman(modulusBit, 2);
+		try {
+			Document dhInit = channel.readMessage();
+			int modulusBit = Integer.valueOf(DomUtil.getText(DomUtil.getChild(dhInit.getDocumentElement(), "modulus")));
+			DiffieHellman dh = new DiffieHellman(modulusBit, 2);
 
-		log.debug("Replying with our result");
-		channel.writeMessage(
-			XmlBuilder.element("dh",
-				XmlBuilder.element("step", XmlBuilder.text("2")),
-				XmlBuilder.element("myresult", XmlBuilder.text(dh.myResult().toString(10)))
-			).toDOM()
-		);
-		log.debug("Waiting for their result");
-		Document dhReply = channel.readMessage();
-		BigInteger theirResult = new BigInteger(DomUtil.getText(DomUtil.getChild(dhReply.getDocumentElement(), "myresult")), 10);
-		this.sharedKey = channel.sharedKey(dh.sharedSecret(theirResult));
-		log.info("Successfully agreed on shared key: {}", Hex.encodeHexString( sharedKey ));
+			log.debug("Replying with our result");
+			channel.writeMessage(
+				XmlBuilder.element("dh",
+					XmlBuilder.element("step", XmlBuilder.text("2")),
+					XmlBuilder.element("myresult", XmlBuilder.text(dh.myResult().toString(10)))
+				).toDOM()
+			);
+			log.debug("Waiting for their result");
+			Document dhReply = channel.readMessage();
+			BigInteger theirResult = new BigInteger(DomUtil.getText(DomUtil.getChild(dhReply.getDocumentElement(), "myresult")), 10);
+			this.sharedKey = channel.sharedKey(dh.sharedSecret(theirResult));
+			log.info("Successfully agreed on shared key: {}", Hex.encodeHexString( sharedKey ));
 
-		while(true) {
-			try {
-				handleRequest();
-			} catch(IOException e) {
-				log.info("Carrier lost");
-				break;
+			while(true) {
+					handleRequest();
 			}
+		} catch(IOException e) {
+			log.info("Carrier lost: connection with {} lost", client.getRemoteSocketAddress());
 		}
 	}
 
