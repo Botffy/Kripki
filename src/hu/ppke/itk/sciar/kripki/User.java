@@ -1,5 +1,7 @@
 package hu.ppke.itk.sciar.kripki;
 
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
 
 public class User {
 	public final String name;
@@ -18,6 +20,10 @@ public class User {
 		if(!(obj instanceof User)) return false;
 		User that = (User) obj;
 		return this.name.equals(that.name) && this.verifier.equals(that.verifier);
+	}
+
+	@Override public int hashCode() {
+		return new HashCodeBuilder(17,31).append(name).append(verifier).toHashCode();
 	}
 
 	public static final User noneSuch = new User("", "");
