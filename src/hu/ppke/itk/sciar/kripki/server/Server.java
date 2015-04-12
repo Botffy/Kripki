@@ -104,17 +104,20 @@ public class Server implements Runnable {
 			return;
 		}
 
-		User user = db.getUser(username);
-		if(user == User.noneSuch) {
-			log.info("No user called '{}'", username);
-			user = db.addUser( username, verifier );
-			log.info("Created new user '{}'", user.name);
-		} else if(user.name.equals(username) && user.verifier.equals(verifier)) {
-			log.info("Authenticated user {}", username);
-		} else {
-			log.info("Authentication failed for {}", username);
-			channel.writeCiphered(error("user", "Could not authenticate user"), sharedKey);
-			return;
+		User user;
+		synchronized(db) {
+			user = db.getUser(username);
+			if(user == User.noneSuch) {
+				log.info("No user called '{}'", username);
+				user = db.addUser( username, verifier );
+				log.info("Created new user '{}'", user.name);
+			} else if(user.name.equals(username) && user.verifier.equals(verifier)) {
+				log.info("Authenticated user {}", username);
+			} else {
+				log.info("Authentication failed for {}", username);
+				channel.writeCiphered(error("user", "Could not authenticate user"), sharedKey);
+				return;
+			}
 		}
 
 		for(Element elem : DomUtil.getChildren(userElement)) {
