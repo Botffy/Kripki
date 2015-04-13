@@ -25,7 +25,7 @@
         <get dest="${user.home}/.ant/lib/ivy.jar" src="http://search.maven.org/remotecontent?filepath=org/apache/ivy/ivy/2.3.0/ivy-2.3.0.jar"/>
     </target>
 
-	<target name="resolve" description="Resolve dependencies with Ivy">
+	<target name="resolve" depends="clean-libs" description="Resolve dependencies with Ivy">
 		<mkdir dir="${lib.dir}" />
 		<ivy:resolve />
 		<ivy:retrieve sync="true" type="jar" pattern="${lib.dir}/[artifact].[ext]"/>
@@ -34,6 +34,10 @@
 	<target name='clean' description="Delete compiled binaries">
 		<delete dir="${bin.dir}" />
 		<delete dir="${dist.dir}" />
+	</target>
+
+	<target name='clean-libs' description="Delete compiled binaries">
+		<delete dir="${lib.dir}" />
 	</target>
 
 	<target name='build'>
