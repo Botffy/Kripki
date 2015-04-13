@@ -22,6 +22,9 @@ public class Server implements Runnable {
 	private final static Logger log = LoggerFactory.getLogger("Root.SERVER");
 
 	public static void main(String[] args) throws Exception {
+		File dbdir = new File("db");
+		dbdir.mkdirs();
+
 		Database db = new XMLDatabase("db/users.xml", "db/users");
 		log.info("XMLDatabase open.");
 
