@@ -54,7 +54,7 @@ public class DiffieHellman {
 	}
 
 
-	private static final Map<Integer, BigInteger> moduli = DiffieHellman.loadModuli("res/DHMods.txt");
+	private static final Map<Integer, BigInteger> moduli = DiffieHellman.loadModuli("res/DHmods.txt");
 	private final Random rand = new SecureRandom();
 	public final BigInteger primitiveElement;
 	public final BigInteger modulus;
