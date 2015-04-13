@@ -4,6 +4,8 @@
 	<property name="bin.dir" location="bin" />
 	<property name="lib.dir" location="lib" />
 	<property name="db.dir" location="db" />
+	<property name="dist.dir" value="dist" />
+
 
 	<path id='build.path'>
 		<fileset dir='${lib.dir}'>
@@ -31,6 +33,7 @@
 
 	<target name='clean' description="Delete compiled binaries">
 		<delete dir="${bin.dir}" />
+		<delete dir="${dist.dir}" />
 	</target>
 
 	<target name='build'>
@@ -74,6 +77,36 @@
 				</assertions>
 			</java>
 		</parallel>
+	</target>
+
+	<target name='versioninfo'>
+		<exec executable="git" outputproperty="git.revision" failifexecutionfails="false" errorproperty="unknown">
+			<arg value="describe"/>
+			<arg value="--tags"/>
+			<arg value="--always"/>
+		</exec>
+	</target>
+
+	<target name='shipit' depends='clean, resolve, versioninfo, build' description="Create an executable jar file">
+		<mkdir dir="${dist.dir}" />
+		<jar destfile='${dist.dir}/${ant.project.name}-server.jar' basedir="${bin.dir}" excludes="hu/ppke/itk/sciar/kripki/client/**">
+			<zipgroupfileset dir="${lib.dir}" includes="*.jar" />
+			<fileset dir="." includes="res/**" />
+			<manifest>
+				<attribute name="Main-Class" value="hu.ppke.itk.sciar.kripki.server.Server" />
+				<attribute name="Built-By" value="${user.name}" />
+				<attribute name="Implementation-Version" value="${git.revision}"/>
+			</manifest>
+		</jar>
+		<jar destfile='${dist.dir}/${ant.project.name}-client.jar' basedir="${bin.dir}" excludes="hu/ppke/itk/sciar/kripki/server/**">
+			<zipgroupfileset dir="${lib.dir}" includes="*.jar" />
+			<fileset dir="." includes="res/**" />
+			<manifest>
+				<attribute name="Main-Class" value="hu.ppke.itk.sciar.kripki.client.Client" />
+				<attribute name="Built-By" value="${user.name}" />
+				<attribute name="Implementation-Version" value="${git.revision}"/>
+			</manifest>
+		</jar>
 	</target>
 
 	<target name="cl-args" unless="args">
