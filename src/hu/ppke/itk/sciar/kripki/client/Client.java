@@ -149,4 +149,13 @@ public class Client {
 
 		return channel.readCipheredXml(sharedKey);
 	}
+
+	public static boolean isError(Document doc) {
+		 return "error".equals(doc.getDocumentElement().getTagName());
+	}
+
+	public static String errorString(Document doc) {
+		assert isError(doc);
+		return DomUtil.getText(doc.getDocumentElement());
+	}
 }

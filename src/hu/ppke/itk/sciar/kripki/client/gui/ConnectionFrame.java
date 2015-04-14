@@ -112,6 +112,16 @@ class ConnectionFrame extends JFrame {
 		this.repaint();
 	}
 
+	public void error(String msg) {
+		cards.first(getContentPane());
+		JOptionPane.showMessageDialog(
+			this,
+			msg,
+			"Error",
+			JOptionPane.ERROR_MESSAGE
+		);
+	}
+
 	public void doConnect() {
 		List<String> errors = new ArrayList<String>();
 
@@ -140,14 +150,9 @@ class ConnectionFrame extends JFrame {
 			DocumentRetriever task = new DocumentRetriever(client, hostStr, port, user) {
 				@Override protected void done() {
 					try {
-						System.out.println(this.get());
+						this.get();
 					} catch(Exception e) {
-						cards.next(getContentPane());
-						JOptionPane.showMessageDialog(ConnectionFrame.this,
-							this.getStatusMessage(),
-							"Error",
-							JOptionPane.ERROR_MESSAGE
-						);
+						ConnectionFrame.this.error(this.getStatusMessage());
 					}
 				}
 			};
