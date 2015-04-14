@@ -5,8 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.nio.file.*;
-import java.nio.charset.StandardCharsets;
+import java.io.*;
 import java.util.regex.*;
 import java.math.BigInteger;
 import java.util.Random;
@@ -18,13 +17,13 @@ public class DiffieHellman {
 	private static Map<Integer, BigInteger> loadModuli(String fname) {
 		Map<Integer, BigInteger> Result = new HashMap<Integer, BigInteger>();
 		try {
-			List<String> lines = Files.readAllLines(Paths.get(fname), StandardCharsets.UTF_8);
-
+			BufferedReader reader = new BufferedReader(new InputStreamReader(DiffieHellman.class.getClassLoader().getResourceAsStream(fname), "UTF-8"));
 			Pattern declaration = Pattern.compile("(\\d+).*");
 			boolean declare = true;
 			Integer bits = null;
 			List<String> valparts = new ArrayList<String>();
-			for(String line : lines) {
+			String line;
+			while((line = reader.readLine()) != null) {
 				if(declare && !StringUtils.isBlank(line)) {
 					Matcher match = declaration.matcher(line);
 					if(!match.matches()) throw new RuntimeException(String.format("In %s expected modulus declaration, got '%s'", fname, line));
