@@ -143,6 +143,32 @@
 		</proguard>
 	</target>
 
+	<target name='make-runscripts' description="Create runscripts">
+		<pathconvert property="run.path.sh" refid="run.path" targetos="unix">
+			<map from="${basedir}" to="."/>
+		</pathconvert>
+		<pathconvert property="run.path.bat" refid="run.path" targetos="windows">
+			<map from="${basedir}" to="."/>
+		</pathconvert>
+		<echo file="kripki-server.sh" append="false">#!/bin/bash
+java -cp ${run.path.sh} -ea hu.ppke.itk.sciar.kripki.server.Server "$$@"
+		</echo>
+		<echo message="Created kripki-server.sh" />
+		<echo file="kripki-server.bat" append="false">@echo off
+java -cp ${run.path.bat} -ea hu.ppke.itk.sciar.kripki.server.Server %*
+		</echo>
+		<echo message="Created kripki-client.bat" />
+		<echo file="kripki-client.sh" append="false">#!/bin/bash
+java -cp ${run.path.sh} -ea hu.ppke.itk.sciar.kripki.client.Client "$$@"
+		</echo>
+		<echo message="Created kripki-client.sh" />
+		<echo file="kripki-client.bat" append="false">@echo off
+java -cp ${run.path.bat} -ea hu.ppke.itk.sciar.kripki.client.Client %*
+		</echo>
+		<echo message="Created kripki-client.bat" />
+
+	</target>
+
 	<target name="cl-args" unless="args">
 		<property name="args" value="" />
 	</target>

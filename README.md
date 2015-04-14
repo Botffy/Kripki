@@ -10,3 +10,4 @@ Ezután:
 * `ant runserver` parancsra indul a szerver
 * `ant runclient` parancsra indul a kliens
 * `ant run-more-clients`-re két versengő kliens indul.
+* `ant make-runscripts`-re futattóscriptek készülnek, amelyekkel könnyen lehet átadni paramétert a futtatandó programoknak
