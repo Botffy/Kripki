@@ -14,6 +14,12 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.codec.binary.Hex;
 
+import joptsimple.OptionParser;
+import joptsimple.OptionSpec;
+import joptsimple.OptionSet;
+import joptsimple.OptionDescriptor;
+import joptsimple.OptionException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,10 +28,9 @@ public class Server implements Runnable {
 	private final static Logger log = LoggerFactory.getLogger("Root.SERVER");
 
 	public static void main(String[] args) throws Exception {
-		File dbdir = new File("db");
-		dbdir.mkdirs();
+		String dbdir = "db";
 
-		Database db = new XMLDatabase("db/users.xml", "db/users");
+		Database db = new XMLDatabase(dbdir);
 		log.info("XMLDatabase open.");
 
 		int port = 1294;

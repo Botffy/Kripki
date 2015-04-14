@@ -26,13 +26,14 @@ class XMLDatabase implements Database {
 	private final Transformer transformer = TransformerFactory.newInstance().newTransformer();
 	private final DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 
-	public XMLDatabase(String usersFile, String usersLib) throws Exception {
-		this(new File(usersFile), new File(usersLib));
+	public XMLDatabase(String dbdir) throws Exception {
+		this(new File(dbdir));
 	}
 
-	public XMLDatabase(File usersFile, File usersLib) throws Exception {
-		this.usersFile = usersFile;
-		this.usersLib  = usersLib;
+	public XMLDatabase(File dbdir) throws Exception {
+		dbdir.mkdirs();
+		this.usersFile = new File(dbdir, "users.xml");
+		this.usersLib  = new File(dbdir, "users");
 
 		if(!usersFile.exists()) {
 			doc = documentBuilder.newDocument();
