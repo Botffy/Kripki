@@ -15,7 +15,7 @@ import javax.swing.text.*;
 import org.apache.commons.lang3.StringUtils;
 
 
-class ConnectionFrame extends JFrame implements ActionListener {
+class ConnectionFrame extends JFrame {
 	private final JTextField hostField;
 	private final JTextField portField;
 	private final JTextField userField;
@@ -29,6 +29,8 @@ class ConnectionFrame extends JFrame implements ActionListener {
 		super("Kripki");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.client = client;
+
+		Action connectAction = new ConnectAction(this);
 
 		hostField = new JTextField("localhost", 12);
         portField = new JTextField(5);
@@ -83,8 +85,7 @@ class ConnectionFrame extends JFrame implements ActionListener {
 		constr.gridwidth = 6;
 		panel.add(passField, constr);
 
-		connectButt = new JButton("Connect");
-		connectButt.addActionListener(this);
+		connectButt = new JButton(connectAction);
 		JPanel btnPanel = new JPanel();
 		btnPanel.add(connectButt, BorderLayout.SOUTH);
 
@@ -92,6 +93,8 @@ class ConnectionFrame extends JFrame implements ActionListener {
 		loginForm.add(panel, BorderLayout.CENTER);
 		loginForm.add(btnPanel, BorderLayout.SOUTH);
 
+		loginForm.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke("pressed ENTER"), "connect");
+		loginForm.getActionMap().put("connect", connectAction);
 
 		JPanel curtain = new JPanel();
 		curtain.setVisible(false);
@@ -109,7 +112,7 @@ class ConnectionFrame extends JFrame implements ActionListener {
 		this.repaint();
 	}
 
-	public void actionPerformed(ActionEvent ev) {
+	public void doConnect() {
 		List<String> errors = new ArrayList<String>();
 
 		String hostStr = hostField.getText();
@@ -156,5 +159,17 @@ class ConnectionFrame extends JFrame implements ActionListener {
 				JOptionPane.ERROR_MESSAGE
 			);
 		}
+	}
+}
+
+class ConnectAction extends AbstractAction {
+	private final ConnectionFrame connFrame;
+	public ConnectAction(ConnectionFrame connFrame) {
+		super("Connect");
+		this.connFrame = connFrame;
+	}
+
+	@Override public void actionPerformed(ActionEvent ev) {
+		this.connFrame.doConnect();
 	}
 }
