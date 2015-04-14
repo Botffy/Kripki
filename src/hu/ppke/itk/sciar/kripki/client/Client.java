@@ -22,14 +22,38 @@ public class Client {
 	private final static Logger log = LoggerFactory.getLogger("Root.CLIENT");
 
 	public static void main(String[] args) throws Exception {
-		Client client = new Client();
-		client.connect("localhost", 1294);
-		Document data = client.addRecord(
-			new User("mormota", "atomrom"),
-			new Record("hottentotta.hu", "mormó", "1234?", "salt")
-		);
+		String host="localhost";
+		String portstr = "1294";
+		int port;
 
-		System.out.println(OutputUtil.indentedString(data, 3));
+		if(args.length>0) {
+			host = args[0];
+			if(host.contains(":")) {
+				portstr = host.substring(host.indexOf(':')+1);
+				host = host.substring(0, host.indexOf(':'));
+			}
+			else if(args.length>1) {
+				portstr = args[1];
+			}
+		}
+
+		try {
+			port = Integer.valueOf(portstr);
+		} catch(NumberFormatException e) {
+			System.err.println(String.format("'%s' doesn't seem like a valid port number", portstr));
+			return;
+		}
+
+
+		Client client = new Client();
+		if(client.connect(host, port)) {
+			Document data = client.addRecord(
+				new User("mormota", "atomrom"),
+				new Record("hottentotta.hu", "mormó", "1234?", "salt")
+			);
+
+			System.out.println(OutputUtil.indentedString(data, 3));
+		}
 	}
 
 	private Socket socket;
