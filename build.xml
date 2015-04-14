@@ -73,6 +73,17 @@
 		</java>
 	</target>
 
+	<target name='runguiclient' depends='build, cl-args' description="Run a GUI client">
+		<mkdir dir="${db.dir}" />
+		<java classpathref="run.path" classname='hu.ppke.itk.sciar.kripki.client.gui.Gui' fork='true'>
+			<assertions enableSystemAssertions="true" >
+				<enable package="hu.ppke.itk.sciar.kripki.client.gui" />
+				<enable package="hu.ppke.itk.sciar.kripki.client" />
+				<enable package="hu.ppke.itk.sciar.kripki" />
+			</assertions>
+		</java>
+	</target>
+
 	<target name='run-more-clients' depends='build, cl-args' description="Run two clients in parallel">
 		<mkdir dir="${db.dir}" />
 		<parallel>
