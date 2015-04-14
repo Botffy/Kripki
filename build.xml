@@ -113,6 +113,28 @@
 		</jar>
 	</target>
 
+	<target name="shipit-pro" depends="shipit" description="Create executable jars with ProGuard">
+		<taskdef resource="proguard/ant/task.properties" />
+		<proguard>
+			-injars ${dist.dir}/${ant.project.name}-server.jar -outjars ${dist.dir}/${ant.project.name}-server-optim.jar
+			-libraryjars ${java.home}/lib/rt.jar
+			-libraryjars ${java.home}/lib/jce.jar
+			-keep public class hu.ppke.itk.sciar.kripki.server.Server {
+    				public static void main(java.lang.String[]);
+				}
+			-dontobfuscate
+		</proguard>
+		<proguard>
+			-injars ${dist.dir}/${ant.project.name}-client.jar -outjars ${dist.dir}/${ant.project.name}-client-optim.jar
+			-libraryjars ${java.home}/lib/rt.jar
+			-libraryjars ${java.home}/lib/jce.jar
+			-keep public class hu.ppke.itk.sciar.kripki.client.Client {
+    				public static void main(java.lang.String[]);
+				}
+			-dontobfuscate
+		</proguard>
+	</target>
+
 	<target name="cl-args" unless="args">
 		<property name="args" value="" />
 	</target>

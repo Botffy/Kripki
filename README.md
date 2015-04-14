@@ -6,6 +6,7 @@ Ezután:
 
 * `ant build` parancsra fordul (kliens és szerver is)
 * `ant shipit` parancsra futtatható jar készül a szerverből és a kliensből is (a dist könyvtárban)
+* `ant shipit-pro` parancsra optimalizált futtatható jarok készülnek (kell hozzá ProGuard)
 * `ant runserver` parancsra indul a szerver
 * `ant runclient` parancsra indul a kliens
 * `ant run-more-clients`-re két versengő kliens indul.
