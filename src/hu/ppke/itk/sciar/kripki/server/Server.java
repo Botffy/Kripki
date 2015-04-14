@@ -12,12 +12,12 @@ import net.sf.practicalxml.XmlException;
 import net.sf.practicalxml.builder.XmlBuilder;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.codec.binary.Hex;
 
 import joptsimple.OptionParser;
 import joptsimple.OptionSpec;
 import joptsimple.OptionSet;
-import joptsimple.OptionDescriptor;
 import joptsimple.OptionException;
 
 import org.slf4j.Logger;
@@ -28,12 +28,31 @@ public class Server implements Runnable {
 	private final static Logger log = LoggerFactory.getLogger("Root.SERVER");
 
 	public static void main(String[] args) throws Exception {
-		String dbdir = "db";
+		OptionParser optionParser = new OptionParser();
+		OptionSpec<Integer> portArg = optionParser.accepts( "port", "the port number the server listens to" )
+			.withRequiredArg()
+			.ofType(Integer.class)
+			.defaultsTo(1294);
+		OptionSpec<File> dbdirArg = optionParser.accepts("dbdir", "name of the database directory relative to cwd")
+			.withRequiredArg()
+			.ofType(File.class)
+			.defaultsTo(new File("db"));
+
+		OptionSet optionSet = null;
+		int port;
+		File dbdir;
+		try {
+			optionSet = optionParser.parse(args);
+			port  = optionSet.valueOf(portArg);
+			dbdir = optionSet.valueOf(dbdirArg);
+		} catch(OptionException e) {
+			System.out.println(String.format("Error: %s\nUsage: <prog-name> [--port=<port-number]>", e.getMessage()));
+			return;
+		}
 
 		Database db = new XMLDatabase(dbdir);
 		log.info("XMLDatabase open.");
 
-		int port = 1294;
 		ServerSocket socket = new ServerSocket(port);
 		log.info("Server started, listening on port {}", port);
 
