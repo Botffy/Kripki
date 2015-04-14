@@ -5,6 +5,7 @@
 	<property name="lib.dir" location="lib" />
 	<property name="db.dir" location="db" />
 	<property name="dist.dir" value="dist" />
+	<property name="report.dir" value="report" />
 
 
 	<path id='build.path'>
@@ -31,9 +32,16 @@
 		<ivy:retrieve sync="true" type="jar" pattern="${lib.dir}/[artifact].[ext]"/>
 	</target>
 
+	<target name="report" description="Generate dependency report">
+		<mkdir dir="${report.dir}" />
+		<ivy:resolve type="${ivy.resolve.types}"/>
+		<ivy:report todir="${report.dir}" />
+	</target>
+
 	<target name='clean' description="Delete compiled binaries">
 		<delete dir="${bin.dir}" />
 		<delete dir="${dist.dir}" />
+		<delete dir="${report.dir}" />
 	</target>
 
 	<target name='clean-libs' description="Delete compiled binaries">
@@ -138,5 +146,4 @@
 	<target name="cl-args" unless="args">
 		<property name="args" value="" />
 	</target>
-
 </project>
