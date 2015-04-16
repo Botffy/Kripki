@@ -10,24 +10,14 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 
 class DocumentRetriever extends javax.swing.SwingWorker<Document, String> {
 	private final Client client;
-	private final String host;
-	private final int port;
-	private final User user;
 
 	private String statusMessage;
-	public DocumentRetriever(Client client, String host, int port, User user) {
+	public DocumentRetriever(Client client) {
 		this.client = client;
-		this.host = host;
-		this.port = port;
-		this.user = user;
 		this.statusMessage = "connecting...";
 	}
 
 	@Override protected Document doInBackground() throws Exception {
-		if(!client.connect(host, port)) {
-			statusMessage = "Could not connect to server";
-			throw new RuntimeException(statusMessage);
-		}
 		Document Result = client.getData();
 		if(client.isError(Result)) {
 			this.statusMessage = client.errorString(Result);

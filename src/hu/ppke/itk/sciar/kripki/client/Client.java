@@ -49,34 +49,39 @@ public class Client {
 		}
 
 
-		Client client = new Client("mormota", "atomrom".getBytes("UTF-8"));
-		if(client.connect(host, port)) {
-			Document data = client.addRecord(
-				new Record("hottentotta.hu", "mormó", "1234?", "salt")
-			);
+		Client client = new Client("mormota", "atomrom".getBytes("UTF-8"), host, port);
+		Document data = client.addRecord(
+			new Record("hottentotta.hu", "mormó", "1234?", "salt")
+		);
 
-			System.out.println(OutputUtil.indentedString(data, 3));
-		}
+		System.out.println(OutputUtil.indentedString(data, 3));
 	}
 
 	private Socket socket;
 	private Channel channel;
 	private byte[] sharedKey = null;
 
+	private final String host;
+	private final int port;
 	private final User user;
 	private final byte[] masterKey;
-	public Client(String username, byte[] password) {
+	public Client(String username, byte[] password, String host, int port) {
+		this.host = host;
+		this.port = port;
+
 		this.masterKey = DigestUtils.sha1(password);
 		Arrays.fill(password, (byte)0);
 		byte[] verifier = DigestUtils.sha1(masterKey);
 		this.user = new User(username, Base64.encodeBase64String(verifier));
 		Arrays.fill(verifier, (byte)0);
+
+		log.info("Created {}", this.toString());
 	}
-	public Client(String username, char[] password) {
-		this(username, ByteUtil.toBytes(password));
+	public Client(String username, char[] password, String host, int port) {
+		this(username, ByteUtil.toBytes(password), host, port);
 	}
 
-	public boolean connect(String host, int port) {
+	private boolean connect() throws IOException {
 		DiffieHellman dh = new DiffieHellman(1024, 2);
 
 		try {
@@ -125,10 +130,8 @@ public class Client {
 	}
 
 	public Document getData() throws IOException {
-		assert socket!=null && socket.isConnected();
-		assert sharedKey != null;
-
-		log.info("Requesting data for {}", user);
+		log.debug("{} requesting data", this);
+		connect();
 		channel.writeCiphered(
 			XmlBuilder.element("user",
 				XmlBuilder.attribute("name", user.name),
@@ -137,15 +140,12 @@ public class Client {
 			sharedKey
 		);
 		log.info("Fetching reply...");
-
 		return channel.readCipheredXml(sharedKey);
 	}
 
 	public Document addRecord(Record record) throws IOException {
-		assert socket != null && socket.isConnected();
-		assert sharedKey != null;
-
-		log.info("Sending new record {} for user {}", record, user);
+		log.debug("{} sending {}", this, record);
+		connect();
 		channel.writeCiphered(
 			XmlBuilder.element("user",
 				XmlBuilder.attribute("name", user.name),
@@ -160,7 +160,6 @@ public class Client {
 			sharedKey
 		);
 		log.info("Fetching reply...");
-
 		return channel.readCipheredXml(sharedKey);
 	}
 
@@ -171,5 +170,9 @@ public class Client {
 	public static String errorString(Document doc) {
 		assert isError(doc);
 		return DomUtil.getText(doc.getDocumentElement());
+	}
+
+	@Override public String toString() {
+		return String.format("%s@%s:%d", user.name, host, port);
 	}
 }

@@ -141,12 +141,12 @@ class ConnectionFrame extends JFrame {
 		char[] passStr = passField.getPassword();
 
 		if(errors.isEmpty()) {
-			Client client = new Client(userStr, passStr);
+			Client client = new Client(userStr, passStr, hostStr, port);
 			User user = new User(userStr, new String(passStr));		//later this will be user = User.encryptedUser(userStr, passStr)
 			Arrays.fill(passStr, '\0');
 
 			cards.next(getContentPane());
-			DocumentRetriever task = new DocumentRetriever(client, hostStr, port, user) {
+			DocumentRetriever task = new DocumentRetriever(client) {
 				@Override protected void done() {
 					try {
 						this.get();
