@@ -1,6 +1,5 @@
 package hu.ppke.itk.sciar.kripki.client.gui;
 
-import hu.ppke.itk.sciar.kripki.client.*;
 import javax.swing.*;
 import javax.swing.text.*;
 import java.awt.GridLayout;
@@ -11,13 +10,8 @@ public class Gui implements Runnable {
 		SwingUtilities.invokeLater(new Gui());
 	}
 
-	Client client;
-	private Gui() {
-		client = new Client();
-	}
-
 	public void run() {
-		ConnectionFrame frame = new ConnectionFrame(client);
+		ConnectionFrame frame = new ConnectionFrame();
 		frame.setLocationRelativeTo(null);
 		frame.setVisible(true);
 	}

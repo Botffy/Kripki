@@ -28,7 +28,7 @@ class DocumentRetriever extends javax.swing.SwingWorker<Document, String> {
 			statusMessage = "Could not connect to server";
 			throw new RuntimeException(statusMessage);
 		}
-		Document Result = client.getData(user);
+		Document Result = client.getData();
 		if(client.isError(Result)) {
 			this.statusMessage = client.errorString(Result);
 			throw new RuntimeException(statusMessage);

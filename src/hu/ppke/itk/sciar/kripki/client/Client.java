@@ -1,8 +1,10 @@
 package hu.ppke.itk.sciar.kripki.client;
 
 import hu.ppke.itk.sciar.kripki.*;
+import hu.ppke.itk.sciar.utils.ByteUtil;
 import java.io.*;
 import java.net.*;
+import java.util.Arrays;
 import java.nio.file.*;
 import java.nio.charset.StandardCharsets;
 import java.math.BigInteger;
@@ -13,6 +15,8 @@ import net.sf.practicalxml.OutputUtil;
 import net.sf.practicalxml.XmlException;
 import net.sf.practicalxml.builder.XmlBuilder;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,10 +49,9 @@ public class Client {
 		}
 
 
-		Client client = new Client();
+		Client client = new Client("mormota", "atomrom".getBytes("UTF-8"));
 		if(client.connect(host, port)) {
 			Document data = client.addRecord(
-				new User("mormota", "atomrom"),
 				new Record("hottentotta.hu", "mormó", "1234?", "salt")
 			);
 
@@ -59,7 +62,18 @@ public class Client {
 	private Socket socket;
 	private Channel channel;
 	private byte[] sharedKey = null;
-	public Client() {
+
+	private final User user;
+	private final byte[] masterKey;
+	public Client(String username, byte[] password) {
+		this.masterKey = DigestUtils.sha1(password);
+		Arrays.fill(password, (byte)0);
+		byte[] verifier = DigestUtils.sha1(masterKey);
+		this.user = new User(username, Base64.encodeBase64String(verifier));
+		Arrays.fill(verifier, (byte)0);
+	}
+	public Client(String username, char[] password) {
+		this(username, ByteUtil.toBytes(password));
 	}
 
 	public boolean connect(String host, int port) {
@@ -110,7 +124,7 @@ public class Client {
 	return true;
 	}
 
-	public Document getData(User user) throws IOException {
+	public Document getData() throws IOException {
 		assert socket!=null && socket.isConnected();
 		assert sharedKey != null;
 
@@ -127,7 +141,7 @@ public class Client {
 		return channel.readCipheredXml(sharedKey);
 	}
 
-	public Document addRecord(User user, Record record) throws IOException {
+	public Document addRecord(Record record) throws IOException {
 		assert socket != null && socket.isConnected();
 		assert sharedKey != null;
 

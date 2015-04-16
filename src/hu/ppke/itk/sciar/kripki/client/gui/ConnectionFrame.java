@@ -24,11 +24,9 @@ class ConnectionFrame extends JFrame {
 
 	CardLayout cards = new CardLayout();
 
-	private final Client client;
-	public ConnectionFrame(Client client) {
+	public ConnectionFrame() {
 		super("Kripki");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		this.client = client;
 
 		Action connectAction = new ConnectAction(this);
 
@@ -143,6 +141,7 @@ class ConnectionFrame extends JFrame {
 		char[] passStr = passField.getPassword();
 
 		if(errors.isEmpty()) {
+			Client client = new Client(userStr, passStr);
 			User user = new User(userStr, new String(passStr));		//later this will be user = User.encryptedUser(userStr, passStr)
 			Arrays.fill(passStr, '\0');
 
