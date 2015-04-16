@@ -59,7 +59,6 @@ public class Client {
 
 	private Socket socket;
 	private Channel channel;
-	private byte[] sharedKey = null;
 
 	private final String host;
 	private final int port;
@@ -81,7 +80,8 @@ public class Client {
 		this(username, ByteUtil.toBytes(password), host, port);
 	}
 
-	private boolean connect() throws IOException {
+	private byte[] connect() throws IOException {
+		byte[] key = null;
 		DiffieHellman dh = new DiffieHellman(1024, 2);
 
 		try {
@@ -91,13 +91,10 @@ public class Client {
 				new DataInputStream(socket.getInputStream()),
 				new DataOutputStream(socket.getOutputStream())
 			);
-			log.debug("Connected.");
-		} catch(SocketException e) {
-			log.error("Couldn't connect to {}:{} ('{}')", host, port, e.getMessage());
-			return false;
+			log.info("Connected.");
 		} catch(IOException e) {
 			log.error("Couldn't connect to {}:{} ('{}')", host, port, e.getMessage());
-			return false;
+			throw new IOException(String.format("Could not connect to %s:%d (%s)", host, port, e.getMessage()), e);
 		}
 
 		try {
@@ -118,20 +115,20 @@ public class Client {
 					XmlBuilder.element("myresult", XmlBuilder.text(dh.myResult().toString(10)))
 				).toDOM()
 			);
-			sharedKey = channel.sharedKey(dh.sharedSecret(theirResult));
-			log.info("Successfully agreed on shared key: {}", Hex.encodeHexString( sharedKey ));
+			key = channel.sharedKey(dh.sharedSecret(theirResult));
+			log.info("Successfully agreed on shared key: {}", Hex.encodeHexString(key));
 
 		} catch(Exception e) {
 			log.error("Couldn't do DH key-exchange: {}", e.getMessage());
-			return false;
+			throw new IOException(String.format("Could not agree on a key with %s:%d.", host, port));
 		}
 
-	return true;
+	return key;
 	}
 
 	public Document getData() throws IOException {
 		log.debug("{} requesting data", this);
-		connect();
+		byte[] sharedKey = connect();
 		channel.writeCiphered(
 			XmlBuilder.element("user",
 				XmlBuilder.attribute("name", user.name),
@@ -145,7 +142,7 @@ public class Client {
 
 	public Document addRecord(Record record) throws IOException {
 		log.debug("{} sending {}", this, record);
-		connect();
+		byte[] sharedKey = connect();
 		channel.writeCiphered(
 			XmlBuilder.element("user",
 				XmlBuilder.attribute("name", user.name),
