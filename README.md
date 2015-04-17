@@ -8,6 +8,8 @@ Ezután:
 * `ant shipit` parancsra futtatható jar készül a szerverből és a kliensből is (a dist könyvtárban)
 * `ant shipit-pro` parancsra optimalizált futtatható jarok készülnek (kell hozzá ProGuard)
 * `ant runserver` parancsra indul a szerver
-* `ant runclient` parancsra indul a kliens
-* `ant run-more-clients`-re két versengő kliens indul.
+* `ant runclient` parancsra indul a kliensdemó
+* `ant run-more-clients`-re két versengő kliensdemó indul.
 * `ant make-runscripts`-re futattóscriptek készülnek, amelyekkel könnyen lehet átadni paramétert a futtatandó programoknak
+
+Ha mindez nyűgnek tűnik, [kész jarok is letölthetőek](http://users.itk.ppke.hu/~sciar/kripki/).
