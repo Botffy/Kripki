@@ -4,7 +4,7 @@ import hu.ppke.itk.sciar.kripki.*;
 import hu.ppke.itk.sciar.utils.ByteUtil;
 import java.io.*;
 import java.net.*;
-import java.util.Arrays;
+import java.util.*;
 import java.nio.file.*;
 import java.nio.charset.StandardCharsets;
 import java.math.BigInteger;
@@ -17,6 +17,14 @@ import net.sf.practicalxml.builder.XmlBuilder;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.spec.IvParameterSpec;
+import java.util.Random;
+import java.security.SecureRandom;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +32,10 @@ import org.slf4j.LoggerFactory;
 
 public class Client {
 	private final static Logger log = LoggerFactory.getLogger("Root.CLIENT");
+	private final static int PBKDF2_ITER = 4092;
+	private final static String PASSWORD_SALT = "password";  // mm-hm.
+	private final static String USERNAME_SALT = "userid";  // am I really doing this?
+
 
 	public static void main(String[] args) throws Exception {
 		String host="localhost";
@@ -63,16 +75,19 @@ public class Client {
 	private final String host;
 	private final int port;
 	private final User user;
-	private final byte[] masterKey;
+	private final char[] masterKey;
 	public Client(String username, byte[] password, String host, int port) {
 		this.host = host;
 		this.port = port;
 
-		this.masterKey = DigestUtils.sha1(password);
+		byte[] master = DigestUtils.sha1(password);
 		Arrays.fill(password, (byte)0);
-		byte[] verifier = DigestUtils.sha1(masterKey);
+		byte[] verifier = DigestUtils.sha1(master);
 		this.user = new User(username, Base64.encodeBase64String(verifier));
 		Arrays.fill(verifier, (byte)0);
+
+		// keys have to be char[] unfortunately
+		masterKey = ByteUtil.cloneToChars(master);
 
 		log.info("Created {}", this.toString());
 	}
@@ -136,28 +151,139 @@ public class Client {
 			).toDOM(),
 			sharedKey
 		);
-		log.info("Fetching reply...");
-		return channel.readCipheredXml(sharedKey);
+		Document doc = fetchReply(sharedKey);
+		return doc;
 	}
 
 	public Document addRecord(Record record) throws IOException {
 		log.debug("{} sending {}", this, record);
+		Record crypRecord = encryptRecord(record);
 		byte[] sharedKey = connect();
 		channel.writeCiphered(
 			XmlBuilder.element("user",
 				XmlBuilder.attribute("name", user.name),
 				XmlBuilder.attribute("verifier", user.verifier),
 				XmlBuilder.element("record",
-					XmlBuilder.attribute("url", record.url),
-					XmlBuilder.attribute("username", record.username),
-					XmlBuilder.attribute("passwd", record.password),
-					XmlBuilder.attribute("recordsalt", record.salt)
+					XmlBuilder.attribute("url", crypRecord.url),
+					XmlBuilder.attribute("username", crypRecord.username),
+					XmlBuilder.attribute("passwd", crypRecord.password),
+					XmlBuilder.attribute("recordsalt", crypRecord.salt)
 				)
 			).toDOM(),
 			sharedKey
 		);
-		log.info("Fetching reply...");
-		return channel.readCipheredXml(sharedKey);
+		Document doc = fetchReply(sharedKey);
+		return doc;
+	}
+
+	private Document fetchReply(byte[] sharedKey) throws IOException {
+		log.debug("Fetching reply...");
+		Document doc = channel.readCipheredXml(sharedKey);
+		log.debug("Reply recieved and decoded.");
+
+		if(isError(doc)) throw new IOException(errorString(doc));
+
+		List<Record> Result = new ArrayList<Record>();		//this is a bit of misuse of Record. maybe client.record and server.record should be separate?
+		for(Element elem : DomUtil.getChildren(doc.getDocumentElement())) {
+			if("record".equals(elem.getTagName())) {
+				Record cryp = new Record(
+					elem.getAttribute("url"),
+					elem.getAttribute("username"),
+					elem.getAttribute("passwd"),
+					elem.getAttribute("recordsalt")
+				);
+				Record plain = decryptRecord(cryp);
+				log.debug("Record for {}, decrypted as {}", cryp.url, plain);
+				Result.add(plain);
+			}
+		}
+
+		return doc;
+	}
+
+	/**
+		Enrypts the password and username fields of given record.
+
+		Salt is generated randomly, and it is also used as initial vector for the AEC/CBC encryption.
+		Hostname is left unencrypted.
+	*/
+	public Record encryptRecord(Record record) throws IOException {
+		Record Result = null;
+		byte[] recordsalt = new byte[16];
+		random.nextBytes(recordsalt);
+		try {
+			SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+			Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "SunJCE");
+			Random random = new SecureRandom();
+
+			PBEKeySpec recordspec = new PBEKeySpec(masterKey, recordsalt, PBKDF2_ITER, 128);
+			SecretKey recordKey = secretKeyFactory.generateSecret(recordspec);
+			recordspec.clearPassword(); // I'm feeling silly
+			char[] recordKeyChars = ByteUtil.cloneToChars(recordKey.getEncoded());
+
+			PBEKeySpec passpec = new PBEKeySpec(recordKeyChars, PASSWORD_SALT.getBytes(StandardCharsets.UTF_8), PBKDF2_ITER, 128);
+			SecretKeySpec passKey = new SecretKeySpec(secretKeyFactory.generateSecret(passpec).getEncoded(), "AES");
+
+			PBEKeySpec userspec = new PBEKeySpec(recordKeyChars, USERNAME_SALT.getBytes(StandardCharsets.UTF_8), PBKDF2_ITER, 128);
+			SecretKeySpec userKey = new SecretKeySpec(secretKeyFactory.generateSecret(userspec).getEncoded(), "AES");
+			userspec.clearPassword(); // really, why I am doing this?
+			passpec.clearPassword(); // it's useless.
+			Arrays.fill(recordKeyChars, '\0');
+
+			cipher.init(Cipher.ENCRYPT_MODE, userKey, new IvParameterSpec(recordsalt));
+			String username = Base64.encodeBase64String(cipher.doFinal(record.username.getBytes(StandardCharsets.UTF_8)));
+
+			cipher.init(Cipher.ENCRYPT_MODE, passKey, new IvParameterSpec(recordsalt));
+			String password = Base64.encodeBase64String(cipher.doFinal(record.password.getBytes(StandardCharsets.UTF_8)));
+
+			Result = new Record(record.url, username, password, Base64.encodeBase64String(recordsalt));
+		} catch(Exception e) {
+			throw new IOException(String.format("Could not encrypt record: %s", e.getMessage()), e);
+		}
+
+		return Result;
+	}
+
+	/**
+		Decrypts the username and password fields of given record.
+
+		Salt is drawn from the original record, and won't appear in the result (this underlines the need
+		for a different class for encrypted records). Salt is also used as initial vector for th AEC/CBC
+		encryption. Hostname is left untouched.
+	*/
+	public Record decryptRecord(final Record record) throws IOException {
+		Record Result = null;
+		byte[] recordsalt = Base64.decodeBase64(record.salt);
+		try {
+			SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+			Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "SunJCE");
+
+			PBEKeySpec recordspec = new PBEKeySpec(masterKey, recordsalt, PBKDF2_ITER, 128);
+			SecretKey recordKey = secretKeyFactory.generateSecret(recordspec);
+			recordspec.clearPassword(); // this looks like good practice, but in effect it's perfectly useless, as keypeces later can't be destroyed.
+			char[] recordKeyChars = ByteUtil.cloneToChars(recordKey.getEncoded());
+
+			PBEKeySpec passpec = new PBEKeySpec(recordKeyChars, PASSWORD_SALT.getBytes(StandardCharsets.UTF_8), PBKDF2_ITER, 128);
+			SecretKeySpec passKey = new SecretKeySpec(secretKeyFactory.generateSecret(passpec).getEncoded(), "AES");
+
+			PBEKeySpec userspec = new PBEKeySpec(recordKeyChars, USERNAME_SALT.getBytes(StandardCharsets.UTF_8), PBKDF2_ITER,128);
+			SecretKeySpec userKey = new SecretKeySpec(secretKeyFactory.generateSecret(userspec).getEncoded(), "AES");
+			userspec.clearPassword();
+			passpec.clearPassword();
+			Arrays.fill(recordKeyChars, '\0');
+
+			cipher.init(Cipher.DECRYPT_MODE, userKey, new IvParameterSpec(recordsalt));
+			String username = new String(cipher.doFinal(Base64.decodeBase64(record.username)), StandardCharsets.UTF_8);
+
+			cipher.init(Cipher.DECRYPT_MODE, passKey, new IvParameterSpec(recordsalt));
+			String password = new String(cipher.doFinal(Base64.decodeBase64(record.password)), StandardCharsets.UTF_8);
+
+			Result = new Record(record.url, username, password, "");
+		} catch(Exception e) {
+			throw new IOException(String.format("Could not decrypt record: %s", e.getMessage()), e);
+		}
+
+		return Result;
 	}
 
 	public static boolean isError(Document doc) {
