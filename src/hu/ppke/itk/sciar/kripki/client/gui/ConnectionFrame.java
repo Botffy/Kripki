@@ -149,7 +149,7 @@ class ConnectionFrame extends JFrame {
 			DocumentRetriever task = new DocumentRetriever(client) {
 				@Override protected void done() {
 					try {
-						this.get();
+						List<Record> result = this.get();
 					} catch(Exception e) {
 						ConnectionFrame.this.error(this.getStatusMessage());
 					}

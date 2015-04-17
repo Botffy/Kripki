@@ -62,11 +62,13 @@ public class Client {
 
 
 		Client client = new Client("mormota", "atomrom".getBytes("UTF-8"), host, port);
-		Document data = client.addRecord(
-			new Record("hottentotta.hu", "mormó", "1234?", "salt")
+		List<Record> data = client.addRecord(
+			new Record("automobil.hu", "motoregér", "szerjózsa páncélja", "")
 		);
 
-		System.out.println(OutputUtil.indentedString(data, 3));
+		for(Record record : data) {
+			System.out.println(record);
+		}
 	}
 
 	private Socket socket;
@@ -141,7 +143,7 @@ public class Client {
 	return key;
 	}
 
-	public Document getData() throws IOException {
+	public List<Record> getData() throws IOException {
 		log.debug("{} requesting data", this);
 		byte[] sharedKey = connect();
 		channel.writeCiphered(
@@ -151,11 +153,10 @@ public class Client {
 			).toDOM(),
 			sharedKey
 		);
-		Document doc = fetchReply(sharedKey);
-		return doc;
+		return fetchReply(sharedKey);
 	}
 
-	public Document addRecord(Record record) throws IOException {
+	public List<Record> addRecord(Record record) throws IOException {
 		log.debug("{} sending {}", this, record);
 		Record crypRecord = encryptRecord(record);
 		byte[] sharedKey = connect();
@@ -172,11 +173,10 @@ public class Client {
 			).toDOM(),
 			sharedKey
 		);
-		Document doc = fetchReply(sharedKey);
-		return doc;
+		return fetchReply(sharedKey);
 	}
 
-	private Document fetchReply(byte[] sharedKey) throws IOException {
+	private List<Record> fetchReply(byte[] sharedKey) throws IOException {
 		log.debug("Fetching reply...");
 		Document doc = channel.readCipheredXml(sharedKey);
 		log.debug("Reply recieved and decoded.");
@@ -198,7 +198,7 @@ public class Client {
 			}
 		}
 
-		return doc;
+		return Result;
 	}
 
 	/**
@@ -210,11 +210,11 @@ public class Client {
 	public Record encryptRecord(Record record) throws IOException {
 		Record Result = null;
 		byte[] recordsalt = new byte[16];
+		Random random = new SecureRandom();
 		random.nextBytes(recordsalt);
 		try {
 			SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
 			Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "SunJCE");
-			Random random = new SecureRandom();
 
 			PBEKeySpec recordspec = new PBEKeySpec(masterKey, recordsalt, PBKDF2_ITER, 128);
 			SecretKey recordKey = secretKeyFactory.generateSecret(recordspec);
