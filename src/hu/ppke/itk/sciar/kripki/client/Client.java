@@ -71,7 +71,6 @@ public class Client {
 		}
 	}
 
-	private Socket socket;
 	private Channel channel;
 
 	private final String host;
@@ -103,11 +102,7 @@ public class Client {
 
 		try {
 			log.info("Connecting to {}:{}...", host, port);
-			this.socket = new Socket(host, port);
-			this.channel = new Channel(
-				new DataInputStream(socket.getInputStream()),
-				new DataOutputStream(socket.getOutputStream())
-			);
+			this.channel = new Channel(host, port);
 			log.info("Connected.");
 		} catch(IOException e) {
 			log.error("Couldn't connect to {}:{} ('{}')", host, port, e.getMessage());

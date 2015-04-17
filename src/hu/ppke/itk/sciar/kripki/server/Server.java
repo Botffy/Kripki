@@ -64,19 +64,12 @@ public class Server implements Runnable {
 	}
 
 	private final Database db;
-	private final Socket client;
 	private final Channel channel;
 	private byte[] sharedKey;
 	private Server(Socket client, Database db) throws IOException {
-		assert client.isConnected();
-
 		this.db = db;
-		this.client = client;
-		this.channel = new Channel(
-			new DataInputStream(client.getInputStream()),
-			new DataOutputStream(client.getOutputStream())
-		);
-		log.info("Started new thread to handle connection with {}", client.getRemoteSocketAddress());
+		this.channel = new Channel(client);
+		log.info("Started new thread to handle connection with {}", channel.getRemoteAddress());
 	}
 
 	public void run() {
@@ -104,12 +97,11 @@ public class Server implements Runnable {
 					handleRequest();
 			}
 		} catch(IOException e) {
-			log.info("Carrier lost: connection with {} lost", client.getRemoteSocketAddress());
+			log.info("Carrier lost: connection with {} lost", channel.getRemoteAddress());
 		}
 	}
 
 	public void handleRequest() throws IOException {
-		assert client.isConnected();
 		assert sharedKey != null;
 
 		Document request = channel.readCipheredXml(sharedKey);

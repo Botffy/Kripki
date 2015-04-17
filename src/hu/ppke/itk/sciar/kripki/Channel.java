@@ -1,6 +1,7 @@
 package hu.ppke.itk.sciar.kripki;
 
 import java.io.*;
+import java.net.*;
 import java.util.Arrays;
 import java.math.BigInteger;
 import java.util.Random;
@@ -15,13 +16,20 @@ import net.sf.practicalxml.OutputUtil;
 import net.sf.practicalxml.ParseUtil;
 
 
-public class Channel {
+public class Channel implements Closeable {
 	private final Random rand = new SecureRandom();
 	private final DataInputStream in;
 	private final DataOutputStream out;
-	public Channel(DataInputStream in, DataOutputStream out) {
-		this.in = in;
-		this.out = out;
+	private final SocketAddress address;
+
+	public Channel(String host, int port) throws IOException {
+		this(new Socket(host, port));
+	}
+
+	public Channel(Socket sock) throws IOException {
+		this.in = new DataInputStream(sock.getInputStream());
+		this.out = new DataOutputStream(sock.getOutputStream());
+		this.address = sock.getRemoteSocketAddress();
 	}
 
 	private byte[] readBytes() throws IOException {
@@ -88,5 +96,13 @@ public class Channel {
 		} catch(GeneralSecurityException e) {
 			throw new RuntimeException(String.format("Deciphering error: '%s'", e.getMessage()), e);
 		}
+	}
+
+	@Override public void close() throws IOException {
+		out.close();
+	}
+
+	public SocketAddress getRemoteAddress() {
+		return address;
 	}
 }
