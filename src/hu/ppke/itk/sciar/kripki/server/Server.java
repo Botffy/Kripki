@@ -104,7 +104,7 @@ public class Server implements Runnable {
 	public void handleRequest() throws IOException {
 		assert sharedKey != null;
 
-		Document request = channel.readCipheredXml(sharedKey);
+		Document request = channel.readCiphered(sharedKey);
 
 		log.info("Authenticating...");
 		Element userElement = request.getDocumentElement();

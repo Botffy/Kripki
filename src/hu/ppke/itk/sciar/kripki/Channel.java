@@ -75,11 +75,11 @@ public class Channel implements Closeable {
 			out.write(iv, 0, 16);
 			writeBytes(cipher.doFinal(input));
 		} catch(GeneralSecurityException e) {
-			throw new RuntimeException(String.format("Enciphering error: '%s'", e.getMessage()), e);
+			throw new IOException(String.format("Enciphering error: '%s'", e.getMessage()), e);
 		}
 	}
 
-	public Document readCipheredXml(byte[] key) throws IOException {
+	public Document readCiphered(byte[] key) throws IOException {
 		assert key.length == 16;
 
 		try {
@@ -94,7 +94,7 @@ public class Channel implements Closeable {
 			cipher.init(Cipher.DECRYPT_MODE, keySpec, new IvParameterSpec(iv));
 			return ParseUtil.parse(new String(cipher.doFinal(ciphertext),"UTF-8"));
 		} catch(GeneralSecurityException e) {
-			throw new RuntimeException(String.format("Deciphering error: '%s'", e.getMessage()), e);
+			throw new IOException(String.format("Deciphering error: '%s'", e.getMessage()), e);
 		}
 	}
 

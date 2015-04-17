@@ -185,7 +185,7 @@ public class Client {
 
 	private List<Record> fetchReply(byte[] sharedKey) throws IOException {
 		log.debug("Fetching reply...");
-		Document doc = channel.readCipheredXml(sharedKey);
+		Document doc = channel.readCiphered(sharedKey);
 		log.debug("Reply recieved and decoded.");
 
 		if(isError(doc)) throw new IOException(errorString(doc));
