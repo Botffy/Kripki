@@ -114,7 +114,8 @@
 		<mkdir dir="${dist.dir}" />
 		<jar destfile='${dist.dir}/${ant.project.name}-server.jar' basedir="${bin.dir}" excludes="hu/ppke/itk/sciar/kripki/client/**">
 			<zipgroupfileset dir="${lib.dir}" includes="*.jar" />
-			<fileset dir="." includes="res/**" />
+			<fileset dir="." includes="res/**"/>
+			<fileset dir="." includes="**.properties"/>
 			<manifest>
 				<attribute name="Main-Class" value="hu.ppke.itk.sciar.kripki.server.Server" />
 				<attribute name="Built-By" value="${user.name}" />
