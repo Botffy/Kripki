@@ -140,35 +140,47 @@ public class Client {
 
 	public List<Record> getData() throws IOException {
 		log.debug("{} requesting data", this);
-		byte[] sharedKey = connect();
-		channel.writeCiphered(
-			XmlBuilder.element("user",
-				XmlBuilder.attribute("name", user.name),
-				XmlBuilder.attribute("verifier", user.verifier)
-			).toDOM(),
-			sharedKey
-		);
-		return fetchReply(sharedKey);
+		List<Record> Result;
+		try {
+			byte[] sharedKey = connect();
+			channel.writeCiphered(
+				XmlBuilder.element("user",
+					XmlBuilder.attribute("name", user.name),
+					XmlBuilder.attribute("verifier", user.verifier)
+				).toDOM(),
+				sharedKey
+			);
+			Result = fetchReply(sharedKey);
+		} finally {
+			if(channel!=null) channel.close();
+		}
+		return Result;
 	}
 
 	public List<Record> addRecord(Record record) throws IOException {
 		log.debug("{} sending {}", this, record);
-		Record crypRecord = encryptRecord(record);
-		byte[] sharedKey = connect();
-		channel.writeCiphered(
-			XmlBuilder.element("user",
-				XmlBuilder.attribute("name", user.name),
-				XmlBuilder.attribute("verifier", user.verifier),
-				XmlBuilder.element("record",
-					XmlBuilder.attribute("url", crypRecord.url),
-					XmlBuilder.attribute("username", crypRecord.username),
-					XmlBuilder.attribute("passwd", crypRecord.password),
-					XmlBuilder.attribute("recordsalt", crypRecord.salt)
-				)
-			).toDOM(),
-			sharedKey
-		);
-		return fetchReply(sharedKey);
+		List<Record> Result;
+		try {
+			Record crypRecord = encryptRecord(record);
+			byte[] sharedKey = connect();
+			channel.writeCiphered(
+				XmlBuilder.element("user",
+					XmlBuilder.attribute("name", user.name),
+					XmlBuilder.attribute("verifier", user.verifier),
+					XmlBuilder.element("record",
+						XmlBuilder.attribute("url", crypRecord.url),
+						XmlBuilder.attribute("username", crypRecord.username),
+						XmlBuilder.attribute("passwd", crypRecord.password),
+						XmlBuilder.attribute("recordsalt", crypRecord.salt)
+					)
+				).toDOM(),
+				sharedKey
+			);
+			Result = fetchReply(sharedKey);
+		} finally {
+			if(channel!=null) channel.close();
+		}
+		return Result;
 	}
 
 	private List<Record> fetchReply(byte[] sharedKey) throws IOException {
