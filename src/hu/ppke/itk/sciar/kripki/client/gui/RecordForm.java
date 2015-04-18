@@ -9,20 +9,29 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.text.*;
 import java.util.List;
+import java.util.ArrayList;
 
 
 class RecordForm extends JDialog {
+	private final RecordTableModel records;
+
 	private CardLayout cards = new CardLayout();
+	private boolean curtainIsDown = false;
 
+	private final JTextField urlField;
+	private final JTextField userField;
+	private final JTextField passField;
 
-	public RecordForm(JFrame parent) {
-		this(parent, null);
+	public RecordForm(JFrame parent, RecordTableModel records) {
+		this(parent, null, records);
 	}
 
-	public RecordForm(JFrame parent, Record record) {
+	public RecordForm(JFrame parent, Record record, RecordTableModel records) {
 		super(parent, record==null? "Add new record" : String.format("Edit record for %s", record.url), true);
+		this.records = records;
 
 		Action cancelAction = new CancelAction();
+		Action doAction = new DoAction();
 
 		JPanel form = new JPanel(new GridBagLayout());
 		GridBagConstraints constr = new GridBagConstraints();
@@ -31,35 +40,40 @@ class RecordForm extends JDialog {
 		constr.weighty = 1;
 		constr.insets = new Insets(4,4,4,4);
 
+		urlField = new JTextField(20);
 		constr.gridx = 0;
 		constr.gridy = 0;
 		constr.gridwidth = 1;
 		form.add(new JLabel("URL:"), constr);
 		constr.gridx = 1;
 		constr.gridwidth = 3;
-		form.add(new JTextField(20), constr);
+		form.add(urlField, constr);
+		form.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke("pressed ENTER"), "pleaseDo");
+		form.getActionMap().put("pleaseDo", doAction);
 
+		userField = new JTextField(20);
 		constr.gridx = 0;
 		constr.gridy = 1;
 		constr.gridwidth = 1;
 		form.add(new JLabel("Username:"), constr);
 		constr.gridx = 1;
 		constr.gridwidth = 3;
-		form.add(new JTextField(20), constr);
+		form.add(userField, constr);
 
+		passField = new JTextField(20);
 		constr.gridx = 0;
 		constr.gridy = 2;
 		constr.gridwidth = 1;
 		form.add(new JLabel("Password:"), constr);
 		constr.gridx = 1;
 		constr.gridwidth = 3;
-		form.add(new JTextField(20), constr);
+		form.add(passField, constr);
 
 		JPanel btnPanel = new JPanel();
 		btnPanel.setLayout(new BoxLayout(btnPanel, BoxLayout.LINE_AXIS));
 		btnPanel.setBorder(BorderFactory.createEmptyBorder(10 , 10, 10, 10));
 		btnPanel.add(Box.createHorizontalGlue());
-		btnPanel.add(new JButton("Add"));
+		btnPanel.add(new JButton(doAction));
 		btnPanel.add(Box.createRigidArea(new Dimension(10, 0)));
 		btnPanel.add(new JButton(cancelAction));
 
@@ -87,6 +101,32 @@ class RecordForm extends JDialog {
 		pack();
 	}
 
+	private void addRecord() {
+		List<String> errors = new ArrayList<String>();
+		String urlStr = urlField.getText();
+		String userStr = userField.getText();
+		String passStr = passField.getText();
+
+		records.addRecord(this, new Record(urlStr, userStr, passStr, ""));
+	}
+
+	private void cancel() {
+		if(!curtainIsDown) shutdown();
+	}
+
+	void curtainDown() {
+		cards.last(getContentPane());
+		curtainIsDown = true;
+	}
+	void curtainUp() {
+		cards.first(getContentPane());
+		curtainIsDown = false;
+	}
+	void shutdown() {
+		setVisible(false);
+		dispose();
+	}
+
 
 	private class CancelAction extends AbstractAction {
 		public CancelAction() {
@@ -94,8 +134,17 @@ class RecordForm extends JDialog {
 		}
 
 		@Override public void actionPerformed(ActionEvent ev) {
-			RecordForm.this.setVisible(false);
-			RecordForm.this.dispose();
+			RecordForm.this.cancel();
+		}
+	}
+
+	private class DoAction extends AbstractAction {
+		public DoAction() {
+			super("OK");
+		}
+
+		@Override public void actionPerformed(ActionEvent ev) {
+			RecordForm.this.addRecord();
 		}
 	}
 }

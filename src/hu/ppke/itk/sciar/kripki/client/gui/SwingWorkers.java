@@ -8,8 +8,8 @@ import java.util.List;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 
-class DataRetriever extends javax.swing.SwingWorker<List<Record>, String> {
-	private final Client client;
+abstract class DataRetriever extends javax.swing.SwingWorker<List<Record>, String> {
+	protected final Client client;
 
 	public DataRetriever(Client client) {
 		this.client = client;
@@ -17,5 +17,18 @@ class DataRetriever extends javax.swing.SwingWorker<List<Record>, String> {
 
 	@Override protected List<Record> doInBackground() throws Exception {
 		return client.getData();
+	}
+}
+
+
+abstract class RecordSender extends DataRetriever {
+	private final Record record;
+	public RecordSender(Client client, Record record) {
+		super(client);
+		this.record = record;
+	}
+
+	@Override protected List<Record> doInBackground() throws Exception {
+		return client.addRecord(record);
 	}
 }

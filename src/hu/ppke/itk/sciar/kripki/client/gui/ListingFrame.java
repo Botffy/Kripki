@@ -12,13 +12,11 @@ import java.util.List;
 
 
 class ListingFrame extends JFrame {
-	private final Client client;
 	private final RecordTableModel model;
 	public ListingFrame(Client client, List<Record> records) {
 		super("Kripki");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		this.client = client;
-		this.model = new RecordTableModel(records);
+		this.model = new RecordTableModel(records, client);
 
 		Action addNewAction = new AddNewAction(this);
 
@@ -44,7 +42,7 @@ class ListingFrame extends JFrame {
 	}
 
 	public void addNew() {
-		RecordForm form = new RecordForm(this);
+		RecordForm form = new RecordForm(this, model);
 		form.setLocationRelativeTo(this);
 		form.setVisible(true);
 	}
