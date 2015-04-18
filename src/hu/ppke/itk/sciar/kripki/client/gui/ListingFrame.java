@@ -20,6 +20,8 @@ class ListingFrame extends JFrame {
 		this.client = client;
 		this.model = new RecordTableModel(records);
 
+		Action addNewAction = new AddNewAction(this);
+
 		final JTable table = new JTable(this.model);
 		table.setCellSelectionEnabled(false);
 		table.setColumnSelectionAllowed(false);
@@ -32,12 +34,32 @@ class ListingFrame extends JFrame {
 		));
 
 		final JPanel buttPane = new JPanel();
-		buttPane.add(new JButton("Add new"));
-		buttPane.add(new JButton("Edit selected"));
+		buttPane.add(new JButton(addNewAction));
+		//buttPane.add(new JButton("Edit selected"));
 
 		this.getContentPane().add(scrollPane, BorderLayout.CENTER);
 		this.getContentPane().add(buttPane, BorderLayout.SOUTH);
 		this.setResizable(false);
 		this.pack();
+	}
+
+	public void addNew() {
+		RecordForm form = new RecordForm(this);
+		form.setLocationRelativeTo(this);
+		form.setVisible(true);
+		System.out.println("ohai");
+	}
+}
+
+
+class AddNewAction extends AbstractAction {
+	private final ListingFrame listing;
+	public AddNewAction(ListingFrame listing) {
+		super("Add new");
+		this.listing = listing;
+	}
+
+	@Override public void actionPerformed(ActionEvent ev) {
+		this.listing.addNew();
 	}
 }
