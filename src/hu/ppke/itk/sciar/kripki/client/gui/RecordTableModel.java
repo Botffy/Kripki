@@ -105,7 +105,7 @@ class RecordTableModel extends AbstractTableModel {
 		}
 
 		origin.curtainDown();
-		SwingWorker task = new RecordSender(client, record) {
+		SwingWorker task = new SwingWorkers.RecordSender(client, record) {
 			@Override protected void done() {
 				try {
 					data = this.get();
