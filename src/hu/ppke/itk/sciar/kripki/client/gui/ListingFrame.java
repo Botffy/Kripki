@@ -47,7 +47,6 @@ class ListingFrame extends JFrame {
 		RecordForm form = new RecordForm(this);
 		form.setLocationRelativeTo(this);
 		form.setVisible(true);
-		System.out.println("ohai");
 	}
 }
 

@@ -22,6 +22,8 @@ class RecordForm extends JDialog {
 	public RecordForm(JFrame parent, Record record) {
 		super(parent, record==null? "Add new record" : String.format("Edit record for %s", record.url), true);
 
+		Action cancelAction = new CancelAction();
+
 		JPanel form = new JPanel(new GridBagLayout());
 		GridBagConstraints constr = new GridBagConstraints();
 		constr.fill = GridBagConstraints.HORIZONTAL;
@@ -59,7 +61,7 @@ class RecordForm extends JDialog {
 		btnPanel.add(Box.createHorizontalGlue());
 		btnPanel.add(new JButton("Add"));
 		btnPanel.add(Box.createRigidArea(new Dimension(10, 0)));
-		btnPanel.add(new JButton("Cancel"));
+		btnPanel.add(new JButton(cancelAction));
 
 		JPanel mainPanel = new JPanel(new BorderLayout());
 		mainPanel.add(form, BorderLayout.CENTER);
@@ -77,8 +79,23 @@ class RecordForm extends JDialog {
 		this.getContentPane().add(mainPanel);
 		this.getContentPane().add(curtain);
 
+		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+		addWindowListener(new FrameClosedEventAction(cancelAction));
+		getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ESCAPE"), "cancel");
+		getRootPane().getActionMap().put("cancel", cancelAction);
 		setResizable(false);
-		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		pack();
+	}
+
+
+	private class CancelAction extends AbstractAction {
+		public CancelAction() {
+			super("Cancel");
+		}
+
+		@Override public void actionPerformed(ActionEvent ev) {
+			RecordForm.this.setVisible(false);
+			RecordForm.this.dispose();
+		}
 	}
 }
