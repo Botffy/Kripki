@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import java.util.prefs.*;
+
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -22,21 +24,24 @@ class ConnectionFrame extends JFrame {
 	private final JPasswordField passField;
 	private final JButton connectButt;
 
-	CardLayout cards = new CardLayout();
+	private CardLayout cards = new CardLayout();
+
+	private final Preferences prefs;
 
 	public ConnectionFrame() {
 		super("Kripki");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		prefs = Preferences.userNodeForPackage(this.getClass());
 
 		Action connectAction = new ConnectAction(this);
 
-		hostField = new JTextField("localhost", 12);
+		hostField = new JTextField( prefs.get("HOST", "localhost") , 12);
         portField = new JTextField(5);
         PlainDocument doc = new PlainDocument();
 		doc.setDocumentFilter(new DigitDocumentFilter());
         portField.setDocument(doc);
-        portField.setText("1294");
-        userField = new JTextField();
+        portField.setText( Integer.toString(prefs.getInt("PORT", 1294)) );
+        userField = new JTextField( prefs.get("USERNAME", "") );
         passField = new JPasswordField();
 
 		JPanel panel = new JPanel(new GridBagLayout());
@@ -105,6 +110,14 @@ class ConnectionFrame extends JFrame {
 		this.getContentPane().add(loginForm);
 		this.getContentPane().add(curtain);
 
+
+		this.addWindowListener(new WindowAdapter() {
+			public void windowOpened( WindowEvent e ){
+				if(StringUtils.isBlank(userField.getText())) userField.requestFocus();
+				else passField.requestFocus();
+			}
+		});
+
 		this.pack();
 		this.setResizable(false);
 		this.repaint();
@@ -132,12 +145,13 @@ class ConnectionFrame extends JFrame {
 		if(StringUtils.isBlank(userStr)) {
 			errors.add("Username cannot be blank");
 		}
-		int port=0;
+		int tmp_port = 0;
 		try {
-			port = Integer.valueOf(portStr);
+			tmp_port = Integer.valueOf(portStr);
 		} catch(NumberFormatException e) {
 			errors.add("Port number must be a number.");
 		}
+		final int port = tmp_port; //damn
 		char[] passStr = passField.getPassword();
 
 		if(errors.isEmpty()) {
@@ -149,7 +163,9 @@ class ConnectionFrame extends JFrame {
 				@Override protected void done() {
 					try {
 						List<Record> result = this.get();
-
+						ConnectionFrame.this.prefs.put("HOST", hostStr);
+						ConnectionFrame.this.prefs.putInt("PORT", port);
+						ConnectionFrame.this.prefs.put("USERNAME", userStr);
 						SwingUtilities.invokeLater(new Runnable() {
 							public void run() {
 								Frame listing = new ListingFrame(client, result);
