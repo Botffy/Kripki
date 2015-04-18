@@ -126,7 +126,7 @@
 			<zipgroupfileset dir="${lib.dir}" includes="*.jar" />
 			<fileset dir="." includes="res/**" />
 			<manifest>
-				<attribute name="Main-Class" value="hu.ppke.itk.sciar.kripki.client.Client" />
+				<attribute name="Main-Class" value="hu.ppke.itk.sciar.kripki.client.gui.Gui" />
 				<attribute name="Built-By" value="${user.name}" />
 				<attribute name="Implementation-Version" value="${git.revision}"/>
 			</manifest>
@@ -148,9 +148,13 @@
 			-injars ${dist.dir}/${ant.project.name}-client.jar -outjars ${dist.dir}/${ant.project.name}-client-optim.jar
 			-libraryjars ${java.home}/lib/rt.jar
 			-libraryjars ${java.home}/lib/jce.jar
-			-keep public class hu.ppke.itk.sciar.kripki.client.Client {
+			-keep public class hu.ppke.itk.sciar.kripki.client.gui.Gui {
     				public static void main(java.lang.String[]);
 				}
+			-keep class net.infotrek.util.prefs.** {
+				public protected private *;
+			}
+			-optimizations !code/allocation/variable
 			-dontobfuscate
 		</proguard>
 	</target>
