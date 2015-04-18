@@ -2,6 +2,7 @@ package hu.ppke.itk.sciar.kripki.server;
 
 import hu.ppke.itk.sciar.kripki.*;
 import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Scanner;
 import org.w3c.dom.*;
@@ -167,10 +168,12 @@ class XMLDatabase implements Database {
 
 	private void flush(Document document, File file) {
 		try {
+			if(!file.exists()) file.createNewFile();
+
 			document.setXmlStandalone(true);
 			transformer.transform(new DOMSource(document), new StreamResult(file));
 			//System.out.println(String.format("Data flushed to %s.", file));
-		} catch(TransformerException e) {
+		} catch(TransformerException|IOException e) {
 			throw new RuntimeException(String.format("Failed to flush to %s", file), e);
 		}
 	}
