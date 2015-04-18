@@ -33,7 +33,7 @@ class ConnectionFrame extends JFrame {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		prefs = Preferences.userNodeForPackage(this.getClass());
 
-		Action connectAction = new ConnectAction(this);
+		Action connectAction = new ConnectAction();
 
 		hostField = new JTextField( prefs.get("HOST", "localhost") , 12);
         portField = new JTextField(5);
@@ -189,16 +189,15 @@ class ConnectionFrame extends JFrame {
 			);
 		}
 	}
-}
 
-class ConnectAction extends AbstractAction {
-	private final ConnectionFrame connFrame;
-	public ConnectAction(ConnectionFrame connFrame) {
-		super("Connect");
-		this.connFrame = connFrame;
-	}
 
-	@Override public void actionPerformed(ActionEvent ev) {
-		this.connFrame.doConnect();
+	private class ConnectAction extends AbstractAction {
+		public ConnectAction() {
+			super("Connect");
+		}
+
+		@Override public void actionPerformed(ActionEvent ev) {
+			ConnectionFrame.this.doConnect();
+		}
 	}
 }

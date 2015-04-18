@@ -18,7 +18,7 @@ class ListingFrame extends JFrame {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.model = new RecordTableModel(records, client);
 
-		Action addNewAction = new AddNewAction(this);
+		Action addNewAction = new AddNewAction();
 
 		final JTable table = new JTable(this.model);
 		table.setCellSelectionEnabled(false);
@@ -46,17 +46,14 @@ class ListingFrame extends JFrame {
 		form.setLocationRelativeTo(this);
 		form.setVisible(true);
 	}
-}
 
+	private class AddNewAction extends AbstractAction {
+		public AddNewAction() {
+			super("Add new");
+		}
 
-class AddNewAction extends AbstractAction {
-	private final ListingFrame listing;
-	public AddNewAction(ListingFrame listing) {
-		super("Add new");
-		this.listing = listing;
-	}
-
-	@Override public void actionPerformed(ActionEvent ev) {
-		this.listing.addNew();
+		@Override public void actionPerformed(ActionEvent ev) {
+			ListingFrame.this.addNew();
+		}
 	}
 }
