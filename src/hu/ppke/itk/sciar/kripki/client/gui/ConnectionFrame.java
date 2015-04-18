@@ -159,7 +159,7 @@ class ConnectionFrame extends JFrame {
 			Arrays.fill(passStr, '\0');
 
 			cards.next(getContentPane());
-			DocumentRetriever task = new DocumentRetriever(client) {
+			DataRetriever task = new DataRetriever(client) {
 				@Override protected void done() {
 					try {
 						List<Record> result = this.get();

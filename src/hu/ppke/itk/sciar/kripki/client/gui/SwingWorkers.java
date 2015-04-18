@@ -8,10 +8,10 @@ import java.util.List;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 
-class DocumentRetriever extends javax.swing.SwingWorker<List<Record>, String> {
+class DataRetriever extends javax.swing.SwingWorker<List<Record>, String> {
 	private final Client client;
 
-	public DocumentRetriever(Client client) {
+	public DataRetriever(Client client) {
 		this.client = client;
 	}
 
