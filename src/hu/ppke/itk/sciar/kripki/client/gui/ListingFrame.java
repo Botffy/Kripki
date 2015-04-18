@@ -8,15 +8,36 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.text.*;
-
-import org.w3c.dom.Document;
+import java.util.List;
 
 
 class ListingFrame extends JFrame {
 	private final Client client;
-	public ListingFrame(Client client) {
+	private final RecordTableModel model;
+	public ListingFrame(Client client, List<Record> records) {
 		super("Kripki");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.client = client;
+		this.model = new RecordTableModel(records);
+
+		final JTable table = new JTable(this.model);
+		table.setCellSelectionEnabled(false);
+		table.setColumnSelectionAllowed(false);
+		table.setRowSelectionAllowed(true);
+		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		final JScrollPane scrollPane = new JScrollPane(table);
+		scrollPane.getViewport().setPreferredSize(new Dimension(
+			table.getPreferredScrollableViewportSize().width,
+			table.getRowHeight()*10
+		));
+
+		final JPanel buttPane = new JPanel();
+		buttPane.add(new JButton("Add new"));
+		buttPane.add(new JButton("Edit selected"));
+
+		this.getContentPane().add(scrollPane, BorderLayout.CENTER);
+		this.getContentPane().add(buttPane, BorderLayout.SOUTH);
+		this.setResizable(false);
+		this.pack();
 	}
 }

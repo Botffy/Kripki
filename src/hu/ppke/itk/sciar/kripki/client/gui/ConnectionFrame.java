@@ -106,7 +106,7 @@ class ConnectionFrame extends JFrame {
 		this.getContentPane().add(curtain);
 
 		this.pack();
-		this.setResizable(true);
+		this.setResizable(false);
 		this.repaint();
 	}
 
@@ -142,7 +142,6 @@ class ConnectionFrame extends JFrame {
 
 		if(errors.isEmpty()) {
 			Client client = new Client(userStr, passStr, hostStr, port);
-			User user = new User(userStr, new String(passStr));		//later this will be user = User.encryptedUser(userStr, passStr)
 			Arrays.fill(passStr, '\0');
 
 			cards.next(getContentPane());
@@ -150,8 +149,18 @@ class ConnectionFrame extends JFrame {
 				@Override protected void done() {
 					try {
 						List<Record> result = this.get();
+
+						SwingUtilities.invokeLater(new Runnable() {
+							public void run() {
+								Frame listing = new ListingFrame(client, result);
+								listing.setLocationRelativeTo(ConnectionFrame.this);
+								listing.setVisible(true);
+								ConnectionFrame.this.setVisible(false);
+								ConnectionFrame.this.dispose();
+							}
+						});
 					} catch(Exception e) {
-						ConnectionFrame.this.error(this.getStatusMessage());
+						ConnectionFrame.this.error(e.getMessage());
 					}
 				}
 			};
