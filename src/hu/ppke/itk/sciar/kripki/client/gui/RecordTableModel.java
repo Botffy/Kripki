@@ -89,15 +89,21 @@ class RecordTableModel extends AbstractTableModel {
 		return errors;
 	}
 
+
+	private static enum Action {
+		ADD,
+		UPDATE
+	}
+
 	public boolean updateRecord(final RecordForm origin, Record record) {
-		return addRecord(origin, record, true);
+		return perform(Action.UPDATE, origin, record);
 	}
 
 	public boolean addRecord(final RecordForm origin, Record record) {
-		return addRecord(origin, record, false);
+		return perform(Action.ADD, origin, record);
 	}
 
-	private boolean addRecord(final RecordForm origin, Record record, boolean update) {
+	private boolean perform(Action action, final RecordForm origin, Record record) {
 		List<String> errors = validateInput(record.url,record.username,record.password);
 		if(!errors.isEmpty()) {
 			JOptionPane.showMessageDialog(
@@ -109,7 +115,7 @@ class RecordTableModel extends AbstractTableModel {
 			return false;
 		}
 
-		if(recordExistsFor(record.url) && !update) {
+		if(recordExistsFor(record.url) && action==Action.ADD) {
 			int n = JOptionPane.showConfirmDialog(
 				origin,
 				String.format("A record for %s already exists. Would you like to overwrite it?", record.url),
