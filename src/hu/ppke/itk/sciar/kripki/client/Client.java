@@ -144,9 +144,11 @@ public class Client {
 		try {
 			byte[] sharedKey = connect();
 			channel.writeCiphered(
-				XmlBuilder.element("user",
-					XmlBuilder.attribute("name", user.name),
-					XmlBuilder.attribute("verifier", user.verifier)
+				XmlBuilder.element("users",
+					XmlBuilder.element("user",
+						XmlBuilder.attribute("name", user.name),
+						XmlBuilder.attribute("verifier", user.verifier)
+					)
 				).toDOM(),
 				sharedKey
 			);
@@ -164,14 +166,16 @@ public class Client {
 			Record crypRecord = encryptRecord(record);
 			byte[] sharedKey = connect();
 			channel.writeCiphered(
-				XmlBuilder.element("user",
-					XmlBuilder.attribute("name", user.name),
-					XmlBuilder.attribute("verifier", user.verifier),
-					XmlBuilder.element("record",
-						XmlBuilder.attribute("url", crypRecord.url),
-						XmlBuilder.attribute("username", crypRecord.username),
-						XmlBuilder.attribute("passwd", crypRecord.password),
-						XmlBuilder.attribute("recordsalt", crypRecord.salt)
+				XmlBuilder.element("users",
+					XmlBuilder.element("user",
+						XmlBuilder.attribute("name", user.name),
+						XmlBuilder.attribute("verifier", user.verifier),
+						XmlBuilder.element("record",
+							XmlBuilder.attribute("url", crypRecord.url),
+							XmlBuilder.attribute("username", crypRecord.username),
+							XmlBuilder.attribute("passwd", crypRecord.password),
+							XmlBuilder.attribute("recordsalt", crypRecord.salt)
+						)
 					)
 				).toDOM(),
 				sharedKey

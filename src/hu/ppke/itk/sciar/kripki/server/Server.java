@@ -108,9 +108,20 @@ public class Server implements Runnable {
 
 		log.info("Authenticating...");
 		Element userElement = request.getDocumentElement();
-		if(!"user".equals(userElement.getTagName())) {
-			log.info("Malformed XML: root element was '{}' (expected 'user')", userElement.getTagName());
-			channel.writeCiphered(error("xml", String.format("Malformed XML: root element was named '%s' (expected 'user')", userElement.getTagName())), sharedKey);
+
+		if("user".equals(userElement.getTagName())) {
+			log.debug("Root was called 'user', this is nonstrict.");
+		} else if("users".equals(userElement.getTagName())) {
+			log.debug("Root was called 'users', this is strict.");
+			userElement = DomUtil.getChild(userElement, "user");
+			if(userElement == null) {
+				log.info("Malformed request: root element 'users' had no 'user' child.");
+				channel.writeCiphered(error("xml", "You gave me a 'users' root element which had no 'user' child"), sharedKey);
+				return;
+			}
+		} else {
+			log.info("Malformed XML: root element was '{}' (expected 'user' or 'users')", userElement.getTagName());
+			channel.writeCiphered(error("xml", String.format("Malformed XML: root element was named '%s' (expected 'user' or 'users')", userElement.getTagName())), sharedKey);
 			return;
 		}
 
