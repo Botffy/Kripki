@@ -136,7 +136,7 @@
 	<target name="shipit-pro" depends="shipit" description="Create executable jars with ProGuard">
 		<taskdef resource="proguard/ant/task.properties" />
 		<proguard>
-			-injars ${dist.dir}/${ant.project.name}-server.jar(!META-INF/**)
+			-injars ${dist.dir}/${ant.project.name}-server.jar(!META-INF/**.txt,!META-INF/**.pom,!META-INF/**.properties,!META-INF/**.xml)
 			-outjars ${dist.dir}/${ant.project.name}-server-optim.jar
 			-libraryjars ${java.home}/lib/rt.jar
 			-libraryjars ${java.home}/lib/jce.jar
@@ -146,7 +146,7 @@
 			-dontobfuscate
 		</proguard>
 		<proguard>
-			-injars ${dist.dir}/${ant.project.name}-client.jar(!META-INF/**)
+			-injars ${dist.dir}/${ant.project.name}-client.jar(!META-INF/**.txt,!META-INF/**.pom,!META-INF/**.properties,!META-INF/**.xml)
 			-outjars ${dist.dir}/${ant.project.name}-client-optim.jar
 			-libraryjars ${java.home}/lib/rt.jar
 			-libraryjars ${java.home}/lib/jce.jar
