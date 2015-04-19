@@ -96,7 +96,7 @@ public class Server implements Runnable {
 			while(true) {
 				try {
 					handleRequest();
-				} catch(Exception e) {
+				} catch(RuntimeException e) {
 					log.error("Exception while handling the request: {}", e.getMessage());
 					channel.writeCiphered(error("server", String.format("An unexpected error: '%s'", e.getMessage())), sharedKey);
 					channel.close();
