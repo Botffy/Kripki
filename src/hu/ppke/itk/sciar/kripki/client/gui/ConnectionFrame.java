@@ -30,6 +30,7 @@ class ConnectionFrame extends JFrame {
 
 	public ConnectionFrame() {
 		super("Kripki");
+		setIconImage((new ImageIcon(ConnectionFrame.class.getResource("/res/key.png"))).getImage());
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		prefs = Preferences.userNodeForPackage(this.getClass());
 

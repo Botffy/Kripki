@@ -18,6 +18,7 @@ class ListingFrame extends JFrame {
 	private final JButton editButt;
 	public ListingFrame(Client client, List<Record> records) {
 		super("Kripki");
+		setIconImage((new ImageIcon(ConnectionFrame.class.getResource("/res/key.png"))).getImage());
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.model = new RecordTableModel(records, client);
 
