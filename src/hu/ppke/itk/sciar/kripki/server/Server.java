@@ -94,7 +94,14 @@ public class Server implements Runnable {
 			log.info("Successfully agreed on shared key: {}", Hex.encodeHexString( sharedKey ));
 
 			while(true) {
+				try {
 					handleRequest();
+				} catch(Exception e) {
+					log.error("Exception while handling the request: {}", e.getMessage());
+					channel.writeCiphered(error("server", String.format("An unexpected error: '%s'", e.getMessage())), sharedKey);
+					channel.close();
+					break;
+				}
 			}
 		} catch(IOException e) {
 			log.info("Carrier lost: connection with {} lost", channel.getRemoteAddress());
