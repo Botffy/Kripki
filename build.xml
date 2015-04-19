@@ -21,7 +21,7 @@
     	<path location="."/>
 	</path>
 
-    <target name="bootstrap" description="Install Apache Ivy">
+    <target name="get-ivy" description="Install Apache Ivy">
         <mkdir dir="${user.home}/.ant/lib"/>
         <get dest="${user.home}/.ant/lib/ivy.jar" src="http://search.maven.org/remotecontent?filepath=org/apache/ivy/ivy/2.3.0/ivy-2.3.0.jar"/>
     </target>
@@ -48,7 +48,7 @@
 		<delete dir="${lib.dir}" />
 	</target>
 
-	<target name='build'>
+	<target name='build' description="Compile everything">
 		<mkdir dir="${bin.dir}" />
 		<javac encoding="utf8" includeantruntime="false" srcdir="${src.dir}" debug="on" destdir="${bin.dir}" classpathref="build.path" />
 	</target>
@@ -63,7 +63,7 @@
 		</java>
 	</target>
 
-	<target name='runclient' depends='build, cl-args' description="Run a client">
+	<target name='runclient' depends='build, cl-args' description="Run client demo">
 		<mkdir dir="${db.dir}" />
 		<java classpathref="run.path" classname='hu.ppke.itk.sciar.kripki.client.Client' fork='true'>
 			<assertions enableSystemAssertions="true" >
