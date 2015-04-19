@@ -31,7 +31,9 @@ class RecordForm extends JDialog {
 		this.records = records;
 
 		Action cancelAction = new CancelAction();
-		Action doAction = new DoAction();
+		Action doAction;
+		if(record==null) doAction = new DoAction();
+		else doAction = new UpdateAction();
 
 		JPanel form = new JPanel(new GridBagLayout());
 		GridBagConstraints constr = new GridBagConstraints();
@@ -47,11 +49,19 @@ class RecordForm extends JDialog {
 		form.add(new JLabel("URL:"), constr);
 		constr.gridx = 1;
 		constr.gridwidth = 3;
-		form.add(urlField, constr);
+		if(record == null) {
+			form.add(urlField, constr);
+		} else {
+			form.add(new JLabel(record.url), constr);
+			urlField.setText(record.url);	// FIXME: hackish.
+		}
 		form.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke("pressed ENTER"), "pleaseDo");
 		form.getActionMap().put("pleaseDo", doAction);
 
 		userField = new JTextField(20);
+		if(record != null) {
+			userField.setText(record.username);
+		}
 		constr.gridx = 0;
 		constr.gridy = 1;
 		constr.gridwidth = 1;
@@ -61,6 +71,9 @@ class RecordForm extends JDialog {
 		form.add(userField, constr);
 
 		passField = new JTextField(20);
+		if(record != null) {
+			passField.setText(record.password);
+		}
 		constr.gridx = 0;
 		constr.gridy = 2;
 		constr.gridwidth = 1;
@@ -102,12 +115,19 @@ class RecordForm extends JDialog {
 	}
 
 	private void addRecord() {
-		List<String> errors = new ArrayList<String>();
 		String urlStr = urlField.getText();
 		String userStr = userField.getText();
 		String passStr = passField.getText();
 
 		records.addRecord(this, new Record(urlStr, userStr, passStr, ""));
+	}
+
+	private void updateRecord() {
+		String urlStr = urlField.getText();	//hack, much
+		String userStr = userField.getText();
+		String passStr = passField.getText();
+
+		records.updateRecord(this, new Record(urlStr, userStr, passStr, ""));
 	}
 
 	private void cancel() {
@@ -145,6 +165,16 @@ class RecordForm extends JDialog {
 
 		@Override public void actionPerformed(ActionEvent ev) {
 			RecordForm.this.addRecord();
+		}
+	}
+
+	private class UpdateAction extends AbstractAction {
+		public UpdateAction() {
+			super("OK");
+		}
+
+		@Override public void actionPerformed(ActionEvent ev) {
+			RecordForm.this.updateRecord();
 		}
 	}
 }

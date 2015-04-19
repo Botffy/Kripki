@@ -89,7 +89,15 @@ class RecordTableModel extends AbstractTableModel {
 		return errors;
 	}
 
+	public boolean updateRecord(final RecordForm origin, Record record) {
+		return addRecord(origin, record, true);
+	}
+
 	public boolean addRecord(final RecordForm origin, Record record) {
+		return addRecord(origin, record, false);
+	}
+
+	private boolean addRecord(final RecordForm origin, Record record, boolean update) {
 		List<String> errors = validateInput(record.url,record.username,record.password);
 		if(!errors.isEmpty()) {
 			JOptionPane.showMessageDialog(
@@ -101,7 +109,7 @@ class RecordTableModel extends AbstractTableModel {
 			return false;
 		}
 
-		if(recordExistsFor(record.url)) {
+		if(recordExistsFor(record.url) && !update) {
 			int n = JOptionPane.showConfirmDialog(
 				origin,
 				String.format("A record for %s already exists. Would you like to overwrite it?", record.url),
@@ -116,6 +124,7 @@ class RecordTableModel extends AbstractTableModel {
 			@Override protected void done() {
 				try {
 					data = this.get();
+					Collections.sort(data, recordComparator);
 					SwingUtilities.invokeLater(new Runnable() {
 						@Override public void run() {
 							origin.shutdown();

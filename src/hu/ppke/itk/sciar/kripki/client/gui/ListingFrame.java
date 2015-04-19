@@ -51,7 +51,7 @@ class ListingFrame extends JFrame {
 		table.getActionMap().put("edit", editSelectedAction);
 		table.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, null);
 		table.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, null);
-		final JScrollPane scrollPane = new JScrollPane(table);
+		final JScrollPane scrollPane = new JScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		scrollPane.getViewport().setPreferredSize(new Dimension(
 			table.getPreferredScrollableViewportSize().width,
 			table.getRowHeight()*10
@@ -88,7 +88,10 @@ class ListingFrame extends JFrame {
 	}
 
 	protected void editSelected() {
-		System.out.println("edit"); //RecordForm form = new RecordForm(this, model.getRecord(table.getSelectedRow()), model);
+		if(table.getSelectedRow()<0) return;
+		RecordForm form = new RecordForm(this, model.getRecord(table.getSelectedRow()), model);
+		form.setLocationRelativeTo(this);
+		form.setVisible(true);
 	}
 
 
