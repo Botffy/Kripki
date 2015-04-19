@@ -136,7 +136,8 @@
 	<target name="shipit-pro" depends="shipit" description="Create executable jars with ProGuard">
 		<taskdef resource="proguard/ant/task.properties" />
 		<proguard>
-			-injars ${dist.dir}/${ant.project.name}-server.jar -outjars ${dist.dir}/${ant.project.name}-server-optim.jar
+			-injars ${dist.dir}/${ant.project.name}-server.jar(!META-INF/**)
+			-outjars ${dist.dir}/${ant.project.name}-server-optim.jar
 			-libraryjars ${java.home}/lib/rt.jar
 			-libraryjars ${java.home}/lib/jce.jar
 			-keep public class hu.ppke.itk.sciar.kripki.server.Server {
@@ -145,7 +146,8 @@
 			-dontobfuscate
 		</proguard>
 		<proguard>
-			-injars ${dist.dir}/${ant.project.name}-client.jar -outjars ${dist.dir}/${ant.project.name}-client-optim.jar
+			-injars ${dist.dir}/${ant.project.name}-client.jar(!META-INF/**)
+			-outjars ${dist.dir}/${ant.project.name}-client-optim.jar
 			-libraryjars ${java.home}/lib/rt.jar
 			-libraryjars ${java.home}/lib/jce.jar
 			-keep public class hu.ppke.itk.sciar.kripki.client.gui.Gui {
