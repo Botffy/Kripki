@@ -45,6 +45,10 @@ class RecordTableModel extends AbstractTableModel {
 		}
 	}
 
+	public Record getRecord(int row) {
+		return data.get(row);
+	}
+
 	@Override public int getColumnCount() {
 		return 3;
 	}
@@ -59,6 +63,9 @@ class RecordTableModel extends AbstractTableModel {
 			default:
 				return "?";
 		}
+	}
+	@Override public Class<?> getColumnClass(int column) {
+		return String.class;
 	}
 
 	public boolean recordExistsFor(String url) {
