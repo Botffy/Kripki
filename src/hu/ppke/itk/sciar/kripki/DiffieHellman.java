@@ -20,10 +20,12 @@ public class DiffieHellman {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(DiffieHellman.class.getClassLoader().getResourceAsStream(fname), "UTF-8"));
 			Pattern declaration = Pattern.compile("(\\d+).*");
 			boolean declare = true;
+			boolean running = true;
 			Integer bits = null;
 			List<String> valparts = new ArrayList<String>();
 			String line;
-			while((line = reader.readLine()) != null) {
+			while(running) {
+				line = reader.readLine();
 				if(declare && !StringUtils.isBlank(line)) {
 					Matcher match = declaration.matcher(line);
 					if(!match.matches()) throw new RuntimeException(String.format("In %s expected modulus declaration, got '%s'", fname, line));
@@ -44,6 +46,8 @@ public class DiffieHellman {
 						valparts.addAll( Arrays.asList(StringUtils.split(line, " ")) );
 					}
 				}
+
+				if(line==null) break;
 			}
 		} catch(Exception e) {
 			throw new RuntimeException(e);
