@@ -14,9 +14,15 @@ import org.w3c.dom.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import net.sf.practicalxml.OutputUtil;
 import net.sf.practicalxml.ParseUtil;
+import net.sf.practicalxml.XmlException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class Channel implements Closeable {
+	private final static Logger log = LoggerFactory.getLogger("Root.CHANNEL");
+
 	private final Random rand = new SecureRandom();
 	private final DataInputStream in;
 	private final DataOutputStream out;
@@ -34,8 +40,17 @@ public class Channel implements Closeable {
 
 	private byte[] readBytes() throws IOException {
 		int len = in.readInt();
+		log.trace("Message size {}", len);
 		byte[] msg = new byte[len];
-		int got = in.read(msg, 0, len);
+
+		int got = 0;
+		while(got < len) {
+			int nowgot = in.read(msg, got, len-got);
+			got+=nowgot;
+			log.trace("Recieved {} bytes of {}", got, len);
+		}
+
+		log.trace("Message {}", new String(msg));
 		return msg;
 	}
 
@@ -49,7 +64,13 @@ public class Channel implements Closeable {
 	}
 
 	public Document readMessage() throws IOException {
-		return ParseUtil.parse(new String(readBytes(), java.nio.charset.StandardCharsets.UTF_8));
+		String str = new String(readBytes(), java.nio.charset.StandardCharsets.UTF_8);
+		try {
+			return ParseUtil.parse(str);
+		} catch(XmlException e) {
+			log.error("Couldn't parse XML. Exact message was:\n {}", str);
+			throw e;
+		}
 	}
 
 	public void writeMessage(Document msg) throws IOException {
