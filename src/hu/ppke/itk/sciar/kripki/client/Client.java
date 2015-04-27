@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 
 public class Client {
 	private final static Logger log = LoggerFactory.getLogger("Root.CLIENT");
-	private final static int PBKDF2_ITER = 4092;
+	private final static int PBKDF2_ITER = 42;
 	private final static String PASSWORD_SALT = "password";  // mm-hm.
 	private final static String USERNAME_SALT = "userid";  // am I really doing this?
 	private final static int DIFFIEHELLMAN_MODULUS_BIT = 1024;
