@@ -134,7 +134,8 @@ class XMLDatabase implements Database {
 			Element rec = null;
 			for(int i=0; i<list.getLength(); ++i) {
 				if( list.item(i).getNodeType() != Node.ELEMENT_NODE ) continue;
-				if( ((Element)list.item(i)).getAttribute("url").equals(record.url) ) {
+				if( ((Element)list.item(i)).getAttribute("url").equals(record.url) &&
+					((Element)list.item(i)).getAttribute("username").equals(record.username) ) {
 					rec = (Element) list.item(i);
 					Node sib = rec.getPreviousSibling();
 					if(sib.getNodeType() == Node.TEXT_NODE) sib.getParentNode().removeChild(sib);
