@@ -50,7 +50,7 @@
 
 	<target name='build' description="Compile everything">
 		<mkdir dir="${bin.dir}" />
-		<javac encoding="utf8" includeantruntime="false" srcdir="${src.dir}" debug="on" destdir="${bin.dir}" classpathref="build.path" />
+		<javac target="1.7" source="1.7" encoding="utf8" includeantruntime="false" srcdir="${src.dir}" debug="on" destdir="${bin.dir}" classpathref="build.path" />
 	</target>
 
 	<target name='runserver' depends='build, cl-args' description="Run the server">

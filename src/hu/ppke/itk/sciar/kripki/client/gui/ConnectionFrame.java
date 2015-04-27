@@ -137,9 +137,9 @@ class ConnectionFrame extends JFrame {
 	public void doConnect() {
 		List<String> errors = new ArrayList<String>();
 
-		String hostStr = hostField.getText();
-		String portStr = portField.getText();
-		String userStr = userField.getText();
+		final String hostStr = hostField.getText();
+		final String portStr = portField.getText();
+		final String userStr = userField.getText();
 		if(StringUtils.isBlank(hostStr)) {
 			errors.add("Hostname cannot be blank");
 		}
@@ -163,7 +163,7 @@ class ConnectionFrame extends JFrame {
 			SwingWorker task = new SwingWorkers.DataRetriever(client) {
 				@Override protected void done() {
 					try {
-						List<Record> result = this.get();
+						final List<Record> result = this.get();
 						ConnectionFrame.this.prefs.put("HOST", hostStr);
 						ConnectionFrame.this.prefs.putInt("PORT", port);
 						ConnectionFrame.this.prefs.put("USERNAME", userStr);

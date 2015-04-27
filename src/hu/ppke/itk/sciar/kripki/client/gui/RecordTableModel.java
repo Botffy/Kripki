@@ -137,7 +137,7 @@ class RecordTableModel extends AbstractTableModel {
 							fireTableDataChanged();
 						}
 					});
-				} catch(Exception e) {
+				} catch(final Exception e) {
 					SwingUtilities.invokeLater(new Runnable() {
 						@Override public void run() {
 							origin.curtainUp();
