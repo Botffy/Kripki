@@ -35,6 +35,7 @@ public class Client {
 	private final static int PBKDF2_ITER = 4092;
 	private final static String PASSWORD_SALT = "password";  // mm-hm.
 	private final static String USERNAME_SALT = "userid";  // am I really doing this?
+	private final static int DIFFIEHELLMAN_MODULUS_BIT = 1024;
 
 
 	public static void main(String[] args) throws Exception {
@@ -98,7 +99,7 @@ public class Client {
 
 	private byte[] connect() throws IOException {
 		byte[] key = null;
-		DiffieHellman dh = new DiffieHellman(1024, 2);
+		DiffieHellman dh = new DiffieHellman(DIFFIEHELLMAN_MODULUS_BIT, 2);
 
 		try {
 			log.info("Connecting to {}:{}...", host, port);
