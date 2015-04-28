@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 
-class RecordForm extends JDialog {
+class RecordForm extends JDialog implements WorkerOrigin {
 	private final RecordTableModel records;
 
 	private CardLayout cards = new CardLayout();
@@ -147,6 +147,20 @@ class RecordForm extends JDialog {
 	void shutdown() {
 		setVisible(false);
 		dispose();
+	}
+
+	@Override public void workerStarted() {
+		curtainDown();
+	}
+	@Override public void workerSuccess() {
+		curtainUp();
+		shutdown();	// when worker is successful, we are no longer needed.
+	}
+	@Override public void workerFailure() {
+		curtainUp();
+	}
+	@Override public Component getComponent() {
+		return this;
 	}
 
 

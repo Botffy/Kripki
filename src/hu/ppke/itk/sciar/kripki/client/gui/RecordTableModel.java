@@ -95,19 +95,19 @@ class RecordTableModel extends AbstractTableModel {
 		UPDATE
 	}
 
-	public boolean updateRecord(final RecordForm origin, Record record) {
+	public boolean updateRecord(final WorkerOrigin origin, Record record) {
 		return perform(Action.UPDATE, origin, record);
 	}
 
-	public boolean addRecord(final RecordForm origin, Record record) {
+	public boolean addRecord(final WorkerOrigin origin, Record record) {
 		return perform(Action.ADD, origin, record);
 	}
 
-	private boolean perform(Action action, final RecordForm origin, Record record) {
+	private boolean perform(Action action, final WorkerOrigin origin, Record record) {
 		List<String> errors = validateInput(record.url,record.username,record.password);
 		if(!errors.isEmpty()) {
 			JOptionPane.showMessageDialog(
-				origin,
+				origin.getComponent(),
 				StringUtils.join(errors, '\n'),
 				"Error",
 				JOptionPane.ERROR_MESSAGE
@@ -118,7 +118,7 @@ class RecordTableModel extends AbstractTableModel {
 		Record conflicts = getConflictingRecord(record);
 		if(conflicts!=null && action==Action.ADD) {
 			int n = JOptionPane.showConfirmDialog(
-				origin,
+				origin.getComponent(),
 				String.format("A record for %s@%s already exists. Would you like to overwrite it?", record.username, record.url),
 				"Overwrite existing record?",
 				JOptionPane.YES_NO_OPTION
@@ -134,7 +134,7 @@ class RecordTableModel extends AbstractTableModel {
 			);
 		}
 
-		origin.curtainDown();
+		origin.workerStarted();
 		SwingWorker task = new SwingWorkers.RecordSender(client, record) {
 			@Override protected void done() {
 				try {
@@ -142,16 +142,16 @@ class RecordTableModel extends AbstractTableModel {
 					Collections.sort(data, recordComparator);
 					SwingUtilities.invokeLater(new Runnable() {
 						@Override public void run() {
-							origin.shutdown();
 							fireTableDataChanged();
+							origin.workerSuccess();
 						}
 					});
 				} catch(final Exception e) {
 					SwingUtilities.invokeLater(new Runnable() {
 						@Override public void run() {
-							origin.curtainUp();
+							origin.workerFailure();
 							JOptionPane.showMessageDialog(
-								origin,
+								origin.getComponent(),
 								StringUtils.join(e.getMessage()),
 								"Error",
 								JOptionPane.ERROR_MESSAGE
