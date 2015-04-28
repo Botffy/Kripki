@@ -12,10 +12,14 @@ import javax.swing.event.*;
 import java.util.List;
 
 
-class ListingFrame extends JFrame {
+class ListingFrame extends JFrame implements WorkerOrigin {
 	private final RecordTableModel model;
 	private final JTable table;
 	private final JButton editButt;
+
+	private CardLayout cards = new CardLayout();
+	private boolean curtainIsDown = false;
+
 	public ListingFrame(Client client, List<Record> records) {
 		super("Kripki");
 		setIconImage((new ImageIcon(ConnectionFrame.class.getResource("/res/key.png"))).getImage());
@@ -24,6 +28,7 @@ class ListingFrame extends JFrame {
 
 		final Action addNewAction = new AddNewAction();
 		final Action editSelectedAction = new EditSelectedAction();
+		final Action refreshAction = new RefreshAction();
 
 		table = new JTable(this.model);
 		table.setCellSelectionEnabled(false);
@@ -60,12 +65,20 @@ class ListingFrame extends JFrame {
 
 
 		final JPanel buttPane = new JPanel();
+		buttPane.add(new JButton(refreshAction));
 		buttPane.add(new JButton(addNewAction));
 		editButt = new JButton(editSelectedAction);
 		buttPane.add(editButt);
 
-		this.getContentPane().add(scrollPane, BorderLayout.CENTER);
-		this.getContentPane().add(buttPane, BorderLayout.SOUTH);
+		final JPanel pane = new JPanel(new BorderLayout());
+		pane.add(scrollPane, BorderLayout.CENTER);
+		pane.add(buttPane, BorderLayout.SOUTH);
+
+		JPanel curtain = new Curtain();
+		this.getContentPane().setLayout(cards);
+		this.getContentPane().add(pane);
+		this.getContentPane().add(curtain);
+
 		this.setResizable(false);
 		this.addWindowListener(new WindowAdapter() {
 			public void windowOpened( WindowEvent e ){
@@ -75,6 +88,19 @@ class ListingFrame extends JFrame {
 		});
 
 		this.pack();
+	}
+
+	@Override public Component getComponent() {
+		return this;
+	}
+	@Override public void workerStarted() {
+		cards.last(getContentPane());
+	}
+	@Override public void workerSuccess() {
+		cards.first(getContentPane());
+	}
+	@Override public void workerFailure() {
+		cards.first(getContentPane());
 	}
 
 	private void tableSelectionChanged() {
@@ -113,6 +139,16 @@ class ListingFrame extends JFrame {
 
 		@Override public void actionPerformed(ActionEvent ev) {
 			ListingFrame.this.editSelected();
+		}
+	}
+
+	private class RefreshAction extends AbstractAction {
+		public RefreshAction() {
+			super("Refresh");
+		}
+
+		@Override public void actionPerformed(ActionEvent ev) {
+			ListingFrame.this.model.refresh(ListingFrame.this);
 		}
 	}
 }
