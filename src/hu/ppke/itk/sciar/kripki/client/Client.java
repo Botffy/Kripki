@@ -36,19 +36,24 @@ public class Client {
 	private final static int PBKDF2_ITER = 42;
 	private final static String PASSWORD_SALT = "password";  // mm-hm.
 	private final static String USERNAME_SALT = "userid";  // am I really doing this?
-	private final static int DIFFIEHELLMAN_MODULUS_BIT = 1024;
+	public final static int DIFFIEHELLMAN_DEFAULT_MODULUS_BIT = 1024;
 
 
 	private Channel channel;
 
+	private final int dhModSize;
 	private final String host;
 	private final int port;
 	private final User user;
 	private final char[] masterKey;
 	private byte[] sharedKey;
-	public Client(String username, byte[] password, String host, int port) {
+	public Client(String username, byte[] password, String host, int port, int dhModSize) {
 		this.host = host;
 		this.port = port;
+		this.dhModSize = dhModSize;
+		if(!DiffieHellman.modulusExistsForSize(dhModSize)) {
+			throw new RuntimeException(String.format("No modulus found for size %d", dhModSize));
+		}
 
 		byte[] master = DigestUtils.sha1(password);
 		Arrays.fill(password, (byte)0);
@@ -61,13 +66,19 @@ public class Client {
 
 		log.info("Created {}", this.toString());
 	}
+	public Client(String username, byte[] password, String host, int port) {
+		this(username, password, host, port, DIFFIEHELLMAN_DEFAULT_MODULUS_BIT);
+	}
 	public Client(String username, char[] password, String host, int port) {
 		this(username, ByteUtil.toBytes(password), host, port);
+	}
+	public Client(String username, char[] password, String host, int port, int dhModSize) {
+		this(username, ByteUtil.toBytes(password), host, port, dhModSize);
 	}
 
 	public void connect() throws IOException {
 		byte[] key = null;
-		DiffieHellman dh = new DiffieHellman(DIFFIEHELLMAN_MODULUS_BIT, 2);
+		DiffieHellman dh = new DiffieHellman(dhModSize, 2);
 
 		try {
 			log.info("Connecting to {}:{}...", host, port);

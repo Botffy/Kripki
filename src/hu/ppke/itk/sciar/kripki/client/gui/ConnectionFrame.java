@@ -22,6 +22,7 @@ class ConnectionFrame extends JFrame {
 	private final JTextField portField;
 	private final JTextField userField;
 	private final JPasswordField passField;
+	private final JComboBox<Integer> modSizeBox;
 	private final JButton connectButt;
 
 	private CardLayout cards = new CardLayout();
@@ -44,6 +45,9 @@ class ConnectionFrame extends JFrame {
         portField.setText( Integer.toString(prefs.getInt("PORT", 1294)) );
         userField = new JTextField( prefs.get("USERNAME", "") );
         passField = new JPasswordField();
+
+        modSizeBox = new JComboBox<Integer>(DiffieHellman.getModulusSizes().toArray(new Integer[0]));
+        modSizeBox.setSelectedItem(prefs.getInt("DHMODSIZE", Client.DIFFIEHELLMAN_DEFAULT_MODULUS_BIT));
 
 		JPanel panel = new JPanel(new GridBagLayout());
 		GridBagConstraints constr = new GridBagConstraints();
@@ -88,6 +92,17 @@ class ConnectionFrame extends JFrame {
 		constr.gridy=2;
 		constr.gridwidth = 6;
 		panel.add(passField, constr);
+
+		constr.gridx=0;
+		constr.gridy=3;
+		constr.gridwidth = 4;
+		panel.add(new JLabel("Diffie-Hellman modulus size:"), constr);
+
+		constr.gridx=4;
+		constr.gridy=3;
+		constr.gridwidth = 3;
+		panel.add(modSizeBox, constr);
+
 
 		connectButt = new JButton(connectAction);
 		JPanel btnPanel = new JPanel();
@@ -140,6 +155,7 @@ class ConnectionFrame extends JFrame {
 		final String hostStr = hostField.getText();
 		final String portStr = portField.getText();
 		final String userStr = userField.getText();
+		final int dhModSize = modSizeBox.getItemAt(modSizeBox.getSelectedIndex());
 		if(StringUtils.isBlank(hostStr)) {
 			errors.add("Hostname cannot be blank");
 		}
@@ -156,7 +172,7 @@ class ConnectionFrame extends JFrame {
 		char[] passStr = passField.getPassword();
 
 		if(errors.isEmpty()) {
-			Client client = new Client(userStr, passStr, hostStr, port);
+			Client client = new Client(userStr, passStr, hostStr, port, dhModSize);
 			Arrays.fill(passStr, '\0');
 
 			cards.next(getContentPane());
@@ -167,6 +183,7 @@ class ConnectionFrame extends JFrame {
 						ConnectionFrame.this.prefs.put("HOST", hostStr);
 						ConnectionFrame.this.prefs.putInt("PORT", port);
 						ConnectionFrame.this.prefs.put("USERNAME", userStr);
+						ConnectionFrame.this.prefs.putInt("DHMODSIZE", dhModSize);
 						SwingUtilities.invokeLater(new Runnable() {
 							public void run() {
 								Frame listing = new ListingFrame(client, result);
