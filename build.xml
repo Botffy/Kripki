@@ -177,11 +177,11 @@ java -cp ${run.path.bat} -ea hu.ppke.itk.sciar.kripki.server.Server %*
 		</echo>
 		<echo message="Created kripki-client.bat" />
 		<echo file="kripki-client.sh" append="false">#!/bin/bash
-java -cp ${run.path.sh} -ea hu.ppke.itk.sciar.kripki.client.Client "$$@"
+java -cp ${run.path.sh} -ea hu.ppke.itk.sciar.kripki.client.gui.Gui "$$@"
 		</echo>
 		<echo message="Created kripki-client.sh" />
 		<echo file="kripki-client.bat" append="false">@echo off
-java -cp ${run.path.bat} -ea hu.ppke.itk.sciar.kripki.client.Client %*
+java -cp ${run.path.bat} -ea hu.ppke.itk.sciar.kripki.client.gui.Gui %*
 		</echo>
 		<echo message="Created kripki-client.bat" />
 
