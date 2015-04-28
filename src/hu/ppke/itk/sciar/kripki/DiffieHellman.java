@@ -99,6 +99,6 @@ public class DiffieHellman {
 	}
 
 	public static Set<Integer> getModulusSizes() {
-		return new TreeSet(moduli.keySet());
+		return new TreeSet<Integer>(moduli.keySet());
 	}
 }
