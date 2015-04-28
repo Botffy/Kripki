@@ -120,7 +120,7 @@ class RecordTableModel extends AbstractTableModel {
 			int n = JOptionPane.showConfirmDialog(
 				origin,
 				String.format("A record for %s@%s already exists. Would you like to overwrite it?", record.username, record.url),
-				"nullwrite existing record?",
+				"Overwrite existing record?",
 				JOptionPane.YES_NO_OPTION
 			);
 			if(n == JOptionPane.NO_OPTION) return false;
