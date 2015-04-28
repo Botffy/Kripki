@@ -9,6 +9,20 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 
 
 class SwingWorkers {
+	public static abstract class AuthWorker extends javax.swing.SwingWorker<List<Record>, String> {
+		protected final Client client;
+
+		public AuthWorker(Client client) {
+			this.client = client;
+		}
+
+		@Override protected List<Record> doInBackground() throws Exception {
+			client.connect();
+			return client.authenticate();
+		}
+	}
+
+
 	public static abstract class DataRetriever extends javax.swing.SwingWorker<List<Record>, String> {
 		protected final Client client;
 

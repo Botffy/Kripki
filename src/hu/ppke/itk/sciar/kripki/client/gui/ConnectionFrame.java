@@ -160,7 +160,7 @@ class ConnectionFrame extends JFrame {
 			Arrays.fill(passStr, '\0');
 
 			cards.next(getContentPane());
-			SwingWorker task = new SwingWorkers.DataRetriever(client) {
+			SwingWorker task = new SwingWorkers.AuthWorker(client) {
 				@Override protected void done() {
 					try {
 						final List<Record> result = this.get();

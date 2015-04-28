@@ -65,6 +65,7 @@ public class Server implements Runnable {
 
 	private final Database db;
 	private final Channel channel;
+	private User authUser;
 	private byte[] sharedKey;
 	private Server(Socket client, Database db) throws IOException {
 		this.db = db;
@@ -92,6 +93,19 @@ public class Server implements Runnable {
 			BigInteger theirResult = new BigInteger(DomUtil.getText(DomUtil.getChild(dhReply.getDocumentElement(), "myresult")), 10);
 			this.sharedKey = channel.sharedKey(dh.sharedSecret(theirResult));
 			log.info("Successfully agreed on shared key: {}", Hex.encodeHexString( sharedKey ));
+		} catch(Exception e) {
+			log.error("Diffie-Hellman key exchange failed, with error {}", e.getMessage());
+			return;
+		}
+
+		try {
+			authenticate();
+			if(authUser == null) {
+				channel.close();
+				return;
+			}
+
+			channel.writeCiphered(db.allRecords(authUser), sharedKey);
 
 			while(true) {
 				try {
@@ -108,36 +122,28 @@ public class Server implements Runnable {
 		}
 	}
 
-	public void handleRequest() throws IOException {
+	public void authenticate() throws IOException {
 		assert sharedKey != null;
 
-		Document request = channel.readCiphered(sharedKey);
-
 		log.info("Authenticating...");
-		Element userElement = request.getDocumentElement();
 
-		if("user".equals(userElement.getTagName())) {
-			log.debug("Root was called 'user', this is nonstrict.");
-		} else if("users".equals(userElement.getTagName())) {
-			log.debug("Root was called 'users', this is strict.");
-			userElement = DomUtil.getChild(userElement, "user");
-			if(userElement == null) {
-				log.info("Malformed request: root element 'users' had no 'user' child.");
-				channel.writeCiphered(error("xml", "You gave me a 'users' root element which had no 'user' child"), sharedKey);
+		String username;
+		String verifier;
+		try {
+			Document request = channel.readCiphered(sharedKey);
+			Element userElement = DomUtil.getChild(request.getDocumentElement(), "user");	// users/user
+
+			username = userElement.getAttribute("name");
+			verifier = userElement.getAttribute("verifier");
+
+			if(StringUtils.isBlank(username) || StringUtils.isBlank(verifier)) {
+				log.error("Malformed XML: name or verifier blank");
+				channel.writeCiphered(error("xml", "Malformed XML: name or verifier was blank"), sharedKey);
 				return;
 			}
-		} else {
-			log.info("Malformed XML: root element was '{}' (expected 'user' or 'users')", userElement.getTagName());
-			channel.writeCiphered(error("xml", String.format("Malformed XML: root element was named '%s' (expected 'user' or 'users')", userElement.getTagName())), sharedKey);
-			return;
-		}
-
-		String username = userElement.getAttribute("name");
-		String verifier = userElement.getAttribute("verifier");
-
-		if(StringUtils.isBlank(username) || StringUtils.isBlank(verifier)) {
-			log.info("Malformed XML: name or verifier blank");
-			channel.writeCiphered(error("xml", "Malformed XML: name or verifier was blank"), sharedKey);
+		} catch(XmlException e) {
+			log.error("XML error: {}", e.getMessage());
+			channel.writeCiphered(error("xml", e.getMessage()), sharedKey);
 			return;
 		}
 
@@ -156,9 +162,18 @@ public class Server implements Runnable {
 				return;
 			}
 		}
+		authUser = user;
+	}
+
+	public void handleRequest() throws IOException {
+		assert sharedKey != null;
+		assert authUser != null;
+
+		Document request = channel.readCiphered(sharedKey);
+		Element userElement = request.getDocumentElement();	// user, theoretically
 
 		for(Element elem : DomUtil.getChildren(userElement)) {
-			if("record".equals(elem.getTagName())) {
+			if("record".equalsIgnoreCase(elem.getTagName())) {
 				Record record = new Record(
 					elem.getAttribute("url"),
 					elem.getAttribute("username"),
@@ -166,14 +181,24 @@ public class Server implements Runnable {
 					elem.getAttribute("recordsalt")
 				);
 
-				log.info("Creating/updating record for {}", record.url);
-				db.addRecord(user, record);
+				if(
+					StringUtils.isBlank(record.url) ||
+					StringUtils.isBlank(record.username) ||
+					StringUtils.isBlank(record.password) ||
+					StringUtils.isBlank(record.salt)
+				) {
+					log.info("{} tried to push invalid record (some data blank)", authUser.name);
+					channel.writeCiphered(error("data", "Invalid record (some data blank)"), sharedKey);
+					return;
+				}
+				log.info("{} creating/updating record for {}", authUser.name, record.url);
+				db.addRecord(authUser, record);
 			} else {
 				log.info("Unknown user action '{}'", elem.getTagName());
 			}
 		}
 
-		channel.writeCiphered(db.allRecords(user), sharedKey);
+		channel.writeCiphered(db.allRecords(authUser), sharedKey);
 	}
 
 

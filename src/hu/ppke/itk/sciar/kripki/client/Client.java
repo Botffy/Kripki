@@ -79,6 +79,7 @@ public class Client {
 	private final int port;
 	private final User user;
 	private final char[] masterKey;
+	private byte[] sharedKey;
 	public Client(String username, byte[] password, String host, int port) {
 		this.host = host;
 		this.port = port;
@@ -98,7 +99,7 @@ public class Client {
 		this(username, ByteUtil.toBytes(password), host, port);
 	}
 
-	private byte[] connect() throws IOException {
+	public void connect() throws IOException {
 		byte[] key = null;
 		DiffieHellman dh = new DiffieHellman(DIFFIEHELLMAN_MODULUS_BIT, 2);
 
@@ -137,56 +138,64 @@ public class Client {
 			throw new IOException(String.format("Could not agree on a key with %s:%d.", host, port));
 		}
 
-	return key;
+	sharedKey = key;
+	}
+
+	public List<Record> authenticate() throws IOException {
+		assert sharedKey != null;
+
+		log.info("Trying to authenticate {}", this);
+
+		channel.writeCiphered(
+			XmlBuilder.element("users",
+				XmlBuilder.element("user",
+					XmlBuilder.attribute("name", user.name),
+					XmlBuilder.attribute("verifier", user.verifier)
+				)
+			).toDOM(),
+			sharedKey
+		);
+
+		return fetchReply(sharedKey);
 	}
 
 	public List<Record> getData() throws IOException {
-		log.debug("{} requesting data", this);
-		List<Record> Result;
-		try {
-			byte[] sharedKey = connect();
-			channel.writeCiphered(
-				XmlBuilder.element("users",
-					XmlBuilder.element("user",
-						XmlBuilder.attribute("name", user.name),
-						XmlBuilder.attribute("verifier", user.verifier)
-					)
-				).toDOM(),
-				sharedKey
-			);
-			Result = fetchReply(sharedKey);
-		} finally {
-			if(channel!=null) channel.close();
-		}
-		return Result;
+		assert sharedKey != null;
+
+		log.info("{} requesting data", this);
+
+		channel.writeCiphered(
+			XmlBuilder.element("user",
+				XmlBuilder.attribute("name", user.name),
+				XmlBuilder.attribute("verifier", user.verifier)
+			).toDOM(),
+			sharedKey
+		);
+
+		return fetchReply(sharedKey);
 	}
 
 	public List<Record> addRecord(Record record) throws IOException {
-		log.debug("{} sending {}", this, record);
-		List<Record> Result;
-		try {
-			Record crypRecord = encryptRecord(record);
-			byte[] sharedKey = connect();
-			channel.writeCiphered(
-				XmlBuilder.element("users",
-					XmlBuilder.element("user",
-						XmlBuilder.attribute("name", user.name),
-						XmlBuilder.attribute("verifier", user.verifier),
-						XmlBuilder.element("record",
-							XmlBuilder.attribute("url", crypRecord.url),
-							XmlBuilder.attribute("username", crypRecord.username),
-							XmlBuilder.attribute("passwd", crypRecord.password),
-							XmlBuilder.attribute("recordsalt", crypRecord.salt)
-						)
-					)
-				).toDOM(),
-				sharedKey
-			);
-			Result = fetchReply(sharedKey);
-		} finally {
-			if(channel!=null) channel.close();
-		}
-		return Result;
+		assert sharedKey != null;
+
+		log.info("{} sending {}", this, record);
+
+		Record crypRecord = encryptRecord(record);
+		channel.writeCiphered(
+			XmlBuilder.element("user",
+				XmlBuilder.attribute("name", user.name),
+				XmlBuilder.attribute("verifier", user.verifier),
+				XmlBuilder.element("record",
+					XmlBuilder.attribute("url", crypRecord.url),
+					XmlBuilder.attribute("username", crypRecord.username),
+					XmlBuilder.attribute("passwd", crypRecord.password),
+					XmlBuilder.attribute("recordsalt", crypRecord.salt)
+				)
+			).toDOM(),
+			sharedKey
+		);
+
+		return fetchReply(sharedKey);
 	}
 
 	private List<Record> fetchReply(byte[] sharedKey) throws IOException {
