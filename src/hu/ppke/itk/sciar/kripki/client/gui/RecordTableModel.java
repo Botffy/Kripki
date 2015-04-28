@@ -135,34 +135,47 @@ class RecordTableModel extends AbstractTableModel {
 		}
 
 		origin.workerStarted();
-		SwingWorker task = new SwingWorkers.RecordSender(client, record) {
+		SwingWorker task = new KripkiWorker.RecordSender(client, record) {
 			@Override protected void done() {
-				try {
-					data = this.get();
-					Collections.sort(data, recordComparator);
-					SwingUtilities.invokeLater(new Runnable() {
-						@Override public void run() {
-							fireTableDataChanged();
-							origin.workerSuccess();
-						}
-					});
-				} catch(final Exception e) {
-					SwingUtilities.invokeLater(new Runnable() {
-						@Override public void run() {
-							origin.workerFailure();
-							JOptionPane.showMessageDialog(
-								origin.getComponent(),
-								StringUtils.join(e.getMessage()),
-								"Error",
-								JOptionPane.ERROR_MESSAGE
-							);
-						}
-					});
-				}
+				workerDone(this, origin);
 			}
 		};
 		task.execute();
 
 		return true;
+	}
+
+	private void workerDone(final KripkiWorker worker, final WorkerOrigin origin) {
+		try {
+			data = worker.get();
+			Collections.sort(data, recordComparator);
+			SwingUtilities.invokeLater(new Runnable() {
+				@Override public void run() {
+					fireTableDataChanged();
+					origin.workerSuccess();
+				}
+			});
+		} catch(final Exception e) {
+			SwingUtilities.invokeLater(new Runnable() {
+				@Override public void run() {
+					origin.workerFailure();
+					JOptionPane.showMessageDialog(
+						origin.getComponent(),
+						StringUtils.join(e.getMessage()),
+						"Error",
+						JOptionPane.ERROR_MESSAGE
+					);
+				}
+			});
+		}
+	}
+	public void refresh(final WorkerOrigin origin) {
+		origin.workerStarted();
+		SwingWorker task = new KripkiWorker.DataRetriever(client) {
+			@Override protected void done() {
+				workerDone(this, origin);
+			}
+		};
+		task.execute();
 	}
 }

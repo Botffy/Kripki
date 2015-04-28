@@ -8,8 +8,8 @@ import java.util.List;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 
-class SwingWorkers {
-	public static abstract class AuthWorker extends javax.swing.SwingWorker<List<Record>, String> {
+public abstract class KripkiWorker extends javax.swing.SwingWorker<List<Record>, String> {
+	public static abstract class AuthWorker extends KripkiWorker {
 		protected final Client client;
 
 		public AuthWorker(Client client) {
@@ -23,7 +23,7 @@ class SwingWorkers {
 	}
 
 
-	public static abstract class DataRetriever extends javax.swing.SwingWorker<List<Record>, String> {
+	public static abstract class DataRetriever extends KripkiWorker {
 		protected final Client client;
 
 		public DataRetriever(Client client) {
