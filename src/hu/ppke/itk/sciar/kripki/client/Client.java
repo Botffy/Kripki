@@ -175,6 +175,30 @@ public class Client {
 		return fetchReply(sharedKey);
 	}
 
+	public List<Record> deleteRecord(Record record) throws IOException {
+		assert sharedKey != null;
+
+		log.info("{} deleting {}", this, record);
+
+		Record crypRecord = encryptRecord(record);
+		channel.writeCiphered(
+			XmlBuilder.element("user",
+				XmlBuilder.attribute("name", user.name),
+				XmlBuilder.attribute("verifier", user.verifier),
+				XmlBuilder.element("delrecord",
+					XmlBuilder.attribute("url", crypRecord.url),
+					XmlBuilder.attribute("username", crypRecord.username),
+					XmlBuilder.attribute("passwd", crypRecord.password),
+					XmlBuilder.attribute("recordsalt", crypRecord.salt)
+				)
+			).toDOM(),
+			sharedKey
+		);
+
+		return fetchReply(sharedKey);
+	}
+
+
 	private List<Record> fetchReply(byte[] sharedKey) throws IOException {
 		log.debug("Fetching reply...");
 		Document doc = channel.readCiphered(sharedKey);

@@ -178,4 +178,22 @@ class RecordTableModel extends AbstractTableModel {
 		};
 		task.execute();
 	}
+
+	public void deleteRecord(final WorkerOrigin origin, Record record) {
+		int n = JOptionPane.showConfirmDialog(
+			origin.getComponent(),
+			String.format("Are you sure you would like to delete the record for %s@%s?", record.username, record.url),
+			"Really delete?",
+			JOptionPane.YES_NO_OPTION
+		);
+		if(n == JOptionPane.NO_OPTION) return;
+
+		origin.workerStarted();
+		SwingWorker task = new KripkiWorker.RecordDeleter(client, record) {
+			@Override protected void done() {
+				workerDone(this, origin);
+			}
+		};
+		task.execute();
+	}
 }

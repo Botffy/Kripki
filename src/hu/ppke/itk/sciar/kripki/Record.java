@@ -22,4 +22,10 @@ public class Record {
 	public boolean overwrites(Record that) {
 		return (this.url.equals(that.url) && this.username.equals(that.username));
 	}
+
+	@Override public boolean equals(Object obj) {
+		if(!(obj instanceof Record)) return false;
+		Record that = (Record) obj;
+		return this.url.equals(that.url) && this.username.equals(that.username) && this.password.equals(that.password);
+	}
 }

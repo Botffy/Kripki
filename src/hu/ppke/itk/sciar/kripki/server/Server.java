@@ -180,6 +180,7 @@ public class Server implements Runnable {
 
 		Document request = channel.readCiphered(sharedKey);
 		Element userElement = request.getDocumentElement();	// user, theoretically
+		log.info("Request from {}", authUser);
 
 		for(Element elem : DomUtil.getChildren(userElement)) {
 			if("record".equalsIgnoreCase(elem.getTagName())) {
@@ -200,8 +201,17 @@ public class Server implements Runnable {
 					channel.writeCiphered(error("data", "Invalid record (some data blank)"), sharedKey);
 					return;
 				}
-				log.info("{} creating/updating record for {}", authUser.name, record.url);
+				log.info("{} creating/updating record for {}@{}", authUser.name, record.username, record.url);
 				db.addRecord(authUser, record);
+			} else if("delrecord".equalsIgnoreCase(elem.getTagName())) {
+				Record record = new Record(
+					elem.getAttribute("url"),
+					elem.getAttribute("username"),
+					elem.getAttribute("passwd"),
+					elem.getAttribute("recordsalt")
+				);
+				log.info("{} deleting record {}", authUser.name, record);
+				db.deleteRecord(authUser, record);
 			} else {
 				log.info("Unknown user action '{}'", elem.getTagName());
 			}

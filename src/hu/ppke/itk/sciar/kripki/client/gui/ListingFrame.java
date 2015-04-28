@@ -16,6 +16,7 @@ class ListingFrame extends JFrame implements WorkerOrigin {
 	private final RecordTableModel model;
 	private final JTable table;
 	private final JButton editButt;
+	private final JButton delButt;
 
 	private CardLayout cards = new CardLayout();
 	private boolean curtainIsDown = false;
@@ -28,6 +29,7 @@ class ListingFrame extends JFrame implements WorkerOrigin {
 
 		final Action addNewAction = new AddNewAction();
 		final Action editSelectedAction = new EditSelectedAction();
+		final Action deleteSelectedAction = new DeleteSelectedAction();
 		final Action refreshAction = new RefreshAction();
 
 		table = new JTable(this.model);
@@ -69,6 +71,8 @@ class ListingFrame extends JFrame implements WorkerOrigin {
 		buttPane.add(new JButton(addNewAction));
 		editButt = new JButton(editSelectedAction);
 		buttPane.add(editButt);
+		delButt = new JButton(deleteSelectedAction);
+		buttPane.add(delButt);
 
 		final JPanel pane = new JPanel(new BorderLayout());
 		pane.add(scrollPane, BorderLayout.CENTER);
@@ -104,8 +108,14 @@ class ListingFrame extends JFrame implements WorkerOrigin {
 	}
 
 	private void tableSelectionChanged() {
-		if(table.getSelectedRow() > -1) editButt.setEnabled(true);
-		else editButt.setEnabled(false);
+		if(table.getSelectedRow() > -1) {
+			editButt.setEnabled(true);
+			delButt.setEnabled(true);
+		}
+		else {
+			editButt.setEnabled(false);
+			delButt.setEnabled(false);
+		}
 	}
 
 	protected void addNew() {
@@ -121,6 +131,10 @@ class ListingFrame extends JFrame implements WorkerOrigin {
 		form.setVisible(true);
 	}
 
+	protected void deleteSelected() {
+		if(table.getSelectedRow()<0) return;
+		model.deleteRecord(this, model.getRecord(table.getSelectedRow()));
+	}
 
 	private class AddNewAction extends AbstractAction {
 		public AddNewAction() {
@@ -139,6 +153,16 @@ class ListingFrame extends JFrame implements WorkerOrigin {
 
 		@Override public void actionPerformed(ActionEvent ev) {
 			ListingFrame.this.editSelected();
+		}
+	}
+
+	private class DeleteSelectedAction extends AbstractAction {
+		public DeleteSelectedAction() {
+			super("Delete selected");
+		}
+
+		@Override public void actionPerformed(ActionEvent ev) {
+			ListingFrame.this.deleteSelected();
 		}
 	}
 

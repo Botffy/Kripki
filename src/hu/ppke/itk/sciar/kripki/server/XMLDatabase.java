@@ -163,6 +163,36 @@ class XMLDatabase implements Database {
 		}
 	}
 
+	@Override public void deleteRecord(User user, Record record) {
+		assert userAuth(user);
+
+		userLocks.putIfAbsent(user, user);
+		synchronized(userLocks.get(user)) {
+			Document udoc = getUserXML(user);
+			NodeList list = udoc.getDocumentElement().getElementsByTagName("record");
+
+			Element rec = null;
+			for(int i=0; i<list.getLength(); ++i) {
+				if( list.item(i).getNodeType() != Node.ELEMENT_NODE ) continue;
+				rec = (Element)list.item(i);
+				Record old = new Record(
+					rec.getAttribute("url"),
+					rec.getAttribute("username"),
+					rec.getAttribute("passwd"),
+					rec.getAttribute("recordsalt")
+				);
+
+				if(record.equals(old)) {
+					Node sib = rec.getPreviousSibling();
+					if(sib.getNodeType() == Node.TEXT_NODE) sib.getParentNode().removeChild(sib);
+					rec = (Element) rec.getParentNode().removeChild(rec);
+				}
+			}
+
+			flush(udoc, new File(usersLib, user.name+".xml"));
+		}
+	}
+
 	@Override public Document allRecords(User user) {
 		assert userAuth(user);
 

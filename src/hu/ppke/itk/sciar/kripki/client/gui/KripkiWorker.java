@@ -47,4 +47,16 @@ public abstract class KripkiWorker extends javax.swing.SwingWorker<List<Record>,
 			return client.addRecord(record);
 		}
 	}
+
+	public static abstract class RecordDeleter extends DataRetriever {
+		private final Record record;
+		public RecordDeleter(Client client, Record record) {
+			super(client);
+			this.record = record;
+		}
+
+		@Override protected List<Record> doInBackground() throws Exception {
+			return client.deleteRecord(record);
+		}
+	}
 }
