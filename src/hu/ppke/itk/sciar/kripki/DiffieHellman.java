@@ -1,5 +1,7 @@
 package hu.ppke.itk.sciar.kripki;
 
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
@@ -90,5 +92,13 @@ public class DiffieHellman {
 
 	public int modulusBitLength() {
 		return modulusBit;
+	}
+
+	public static boolean modulusExistsForSize(int size) {
+		return moduli.containsKey(size);
+	}
+
+	public static Set<Integer> getModulusSizes() {
+		return new TreeSet(moduli.keySet());
 	}
 }

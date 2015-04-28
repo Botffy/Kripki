@@ -49,6 +49,8 @@ public class Server implements Runnable {
 			System.out.println(String.format("Error: %s\nUsage: <prog-name> [--port=<port-number]>", e.getMessage()));
 			return;
 		}
+		log.info("Starting server.");
+		log.info("Available DH modulus sizes are {}", DiffieHellman.getModulusSizes());
 
 		Database db = new XMLDatabase(dbdir);
 		log.info("XMLDatabase open.");
@@ -79,6 +81,13 @@ public class Server implements Runnable {
 		try {
 			Document dhInit = channel.readMessage();
 			int modulusBit = Integer.valueOf(DomUtil.getText(DomUtil.getChild(dhInit.getDocumentElement(), "modulus")));
+			if(!DiffieHellman.modulusExistsForSize(modulusBit)) {
+				log.error("Client wanted to use unknown modulus size {}", modulusBit);
+				channel.writeMessage(error("dh", String.format("I don't know any modulus of size %d", modulusBit)));
+				return;
+			}
+			log.debug("Requested modulus size is {}", modulusBit);
+
 			DiffieHellman dh = new DiffieHellman(modulusBit, 2);
 
 			log.debug("Replying with our result");
