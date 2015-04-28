@@ -39,40 +39,6 @@ public class Client {
 	private final static int DIFFIEHELLMAN_MODULUS_BIT = 1024;
 
 
-	public static void main(String[] args) throws Exception {
-		String host="localhost";
-		String portstr = "1294";
-		int port;
-
-		if(args.length>0) {
-			host = args[0];
-			if(host.contains(":")) {
-				portstr = host.substring(host.indexOf(':')+1);
-				host = host.substring(0, host.indexOf(':'));
-			}
-			else if(args.length>1) {
-				portstr = args[1];
-			}
-		}
-
-		try {
-			port = Integer.valueOf(portstr);
-		} catch(NumberFormatException e) {
-			System.err.println(String.format("'%s' doesn't seem like a valid port number", portstr));
-			return;
-		}
-
-
-		Client client = new Client("mormota", "atomrom".getBytes("UTF-8"), host, port);
-		List<Record> data = client.addRecord(
-			new Record("automobil.hu", "motoregér", "szerjózsa páncélja", "")
-		);
-
-		for(Record record : data) {
-			System.out.println(record);
-		}
-	}
-
 	private Channel channel;
 
 	private final String host;

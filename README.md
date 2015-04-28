@@ -8,8 +8,6 @@ Ezután:
 * `ant shipit` parancsra futtatható jar készül a szerverből és a kliensből is (a dist könyvtárban)
 * `ant shipit-pro` parancsra optimalizált futtatható jarok készülnek (kell hozzá ProGuard és a ProGuard anttask)
 * `ant runserver` parancsra indul a szerver
-* `ant runclient` parancsra kliensdemó indul
-* `ant run-more-clients`-re két versengő kliensdemó indul.
 * `ant runguiclient` parancsra guis kliens indul.
 * `ant make-runscripts`-re futattóscriptek készülnek, amelyekkel könnyen lehet átadni paramétert a futtatandó programoknak
 
