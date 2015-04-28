@@ -59,16 +59,18 @@ class RecordForm extends JDialog {
 		form.getActionMap().put("pleaseDo", doAction);
 
 		userField = new JTextField(20);
-		if(record != null) {
-			userField.setText(record.username);
-		}
 		constr.gridx = 0;
 		constr.gridy = 1;
 		constr.gridwidth = 1;
 		form.add(new JLabel("Username:"), constr);
 		constr.gridx = 1;
 		constr.gridwidth = 3;
-		form.add(userField, constr);
+		if(record == null) {
+			form.add(userField, constr);
+		} else {
+			form.add(new JLabel(record.username), constr);
+			userField.setText(record.username);	// FIXME: hackish.
+		}
 
 		passField = new JTextField(20);
 		if(record != null) {

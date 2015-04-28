@@ -18,4 +18,8 @@ public class Record {
 	@Override public String toString() {
 		return String.format("(url=%s username=%s password=%s salt=%s)", url, username, password, salt);
 	}
+
+	public boolean overwrites(Record that) {
+		return (this.url.equals(that.url) && this.username.equals(that.username));
+	}
 }

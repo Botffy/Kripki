@@ -68,11 +68,11 @@ class RecordTableModel extends AbstractTableModel {
 		return String.class;
 	}
 
-	public boolean recordExistsFor(String url) {
+	public Record getConflictingRecord(Record newRecord) {
 		for(Record record : data) {
-			if(record.url.equals(url)) return true;
+			if(newRecord.overwrites(record)) return record;
 		}
-		return false;
+		return null;
 	}
 
 	public List<String> validateInput(String url, String user, String pass) {
@@ -115,14 +115,23 @@ class RecordTableModel extends AbstractTableModel {
 			return false;
 		}
 
-		if(recordExistsFor(record.url) && action==Action.ADD) {
+		Record conflicts = getConflictingRecord(record);
+		if(conflicts!=null && action==Action.ADD) {
 			int n = JOptionPane.showConfirmDialog(
 				origin,
-				String.format("A record for %s already exists. Would you like to overwrite it?", record.url),
-				"Overwrite existing record?",
+				String.format("A record for %s@%s already exists. Would you like to overwrite it?", record.username, record.url),
+				"nullwrite existing record?",
 				JOptionPane.YES_NO_OPTION
 			);
 			if(n == JOptionPane.NO_OPTION) return false;
+		}
+		if(conflicts!=null) {
+			record = new Record(
+				record.url,
+				record.username,
+				record.password,
+				conflicts.salt  // to make sure the encoded url will be the same so that server will notice it's the same.
+			);
 		}
 
 		origin.curtainDown();

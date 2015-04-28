@@ -14,6 +14,7 @@ import net.sf.practicalxml.ParseUtil;
 import net.sf.practicalxml.OutputUtil;
 import net.sf.practicalxml.XmlException;
 import net.sf.practicalxml.builder.XmlBuilder;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -216,14 +217,21 @@ public class Client {
 	/**
 		Enrypts the password and username fields of given record.
 
-		Salt is generated randomly, and it is also used as initial vector for the AEC/CBC encryption.
+		Salt is generated randomly, unless record.salt is not blank, in which case the original
+		is supplied.
+		Salt is also used as initial vector for the AEC/CBC encryption.
 		Hostname is left unencrypted.
 	*/
 	public Record encryptRecord(Record record) throws IOException {
 		Record Result = null;
-		byte[] recordsalt = new byte[16];
-		Random random = new SecureRandom();
-		random.nextBytes(recordsalt);
+		byte[] recordsalt = null;
+		if(StringUtils.isBlank(record.salt)) {
+			recordsalt = new byte[16];
+			Random random = new SecureRandom();
+			random.nextBytes(recordsalt);
+		} else {
+			recordsalt = Base64.decodeBase64(record.salt);
+		}
 		try {
 			SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
 			Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "SunJCE");
@@ -259,8 +267,7 @@ public class Client {
 	/**
 		Decrypts the username and password fields of given record.
 
-		Salt is drawn from the original record, and won't appear in the result (this underlines the need
-		for a different class for encrypted records). Salt is also used as initial vector for th AEC/CBC
+		Salt is drawn from the original record & it's left untouched. Salt is also used as initial vector for th AEC/CBC
 		encryption. Hostname is left untouched.
 	*/
 	public Record decryptRecord(final Record record) throws IOException {
@@ -290,7 +297,7 @@ public class Client {
 			cipher.init(Cipher.DECRYPT_MODE, passKey, new IvParameterSpec(recordsalt));
 			String password = new String(cipher.doFinal(Base64.decodeBase64(record.password)), StandardCharsets.UTF_8);
 
-			Result = new Record(record.url, username, password, "");
+			Result = new Record(record.url, username, password, record.salt);
 		} catch(Exception e) {
 			throw new IOException(String.format("Could not decrypt record: %s", e.getMessage()), e);
 		}
