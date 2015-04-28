@@ -97,12 +97,8 @@ class RecordForm extends JDialog implements WorkerOrigin {
 		mainPanel.add(btnPanel, BorderLayout.PAGE_END);
 
 
-		JPanel curtain = new JPanel();
+		JPanel curtain = new Curtain();
 		curtain.setVisible(false);
-		curtain.setLayout(new BorderLayout());
-		JProgressBar spinner = new JProgressBar();
-		spinner.setIndeterminate(true);
-		curtain.add(spinner, BorderLayout.CENTER);
 
 		this.getContentPane().setLayout(cards);
 		this.getContentPane().add(mainPanel);

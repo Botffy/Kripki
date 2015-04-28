@@ -115,12 +115,8 @@ class ConnectionFrame extends JFrame {
 		loginForm.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke("pressed ENTER"), "connect");
 		loginForm.getActionMap().put("connect", connectAction);
 
-		JPanel curtain = new JPanel();
+		JPanel curtain = new Curtain();
 		curtain.setVisible(false);
-		curtain.setLayout(new BorderLayout());
-		JProgressBar spinner = new JProgressBar();
-		spinner.setIndeterminate(true);
-		curtain.add(spinner, BorderLayout.CENTER);
 
 		this.getContentPane().setLayout(cards);
 		this.getContentPane().add(loginForm);
