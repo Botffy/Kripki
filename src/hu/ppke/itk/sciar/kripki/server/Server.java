@@ -154,6 +154,10 @@ public class Server implements Runnable {
 			log.error("XML error: {}", e.getMessage());
 			channel.writeCiphered(error("xml", e.getMessage()), sharedKey);
 			return;
+		} catch(IOException e) {
+			log.error("IO error: {}", e.getMessage());
+			channel.writeCiphered(error("channel", e.getMessage()), sharedKey);
+			return;
 		}
 
 		User user;
