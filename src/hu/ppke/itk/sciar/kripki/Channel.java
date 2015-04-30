@@ -104,11 +104,12 @@ public class Channel implements Closeable {
 		assert key.length == 16;
 
 		try {
+			log.trace("Expecting IV...");
 			byte[] iv = new byte[16];
 			in.read(iv);	//assumption, much. fixme, eventually
-			int len = in.readInt();
-			byte[] ciphertext = new byte[len];
-			in.read(ciphertext);
+			log.trace("Got IV: {}", iv);
+
+			byte[] ciphertext = readBytes();
 
 			SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
 			Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "SunJCE");
