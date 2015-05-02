@@ -191,7 +191,7 @@ public class Server implements Runnable {
 				Record record = new Record(
 					elem.getAttribute("url"),
 					elem.getAttribute("username"),
-					elem.getAttribute("passwd"),
+					StringUtils.isBlank(elem.getAttribute("passwd"))? elem.getAttribute("password") : elem.getAttribute("passwd"),
 					elem.getAttribute("recordsalt")
 				);
 
