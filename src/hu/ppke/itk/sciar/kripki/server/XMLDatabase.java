@@ -101,7 +101,6 @@ class XMLDatabase implements Database {
 				Document udoc = documentBuilder.newDocument();
 				Element root = udoc.createElement("user");
 				root.setAttribute("name", user.name);
-				root.setAttribute("verifier", user.verifier);
 				udoc.appendChild(root);
 				flush(udoc, ufil);
 			}

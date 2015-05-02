@@ -114,7 +114,9 @@ public class Channel implements Closeable {
 			SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
 			Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "SunJCE");
 			cipher.init(Cipher.DECRYPT_MODE, keySpec, new IvParameterSpec(iv));
-			return ParseUtil.parse(new String(cipher.doFinal(ciphertext),"UTF-8"));
+			String decoded = new String(cipher.doFinal(ciphertext),"UTF-8");
+			log.trace("Message decoded as:\n{}", decoded);
+			return ParseUtil.parse(decoded);
 		} catch(GeneralSecurityException e) {
 			throw new IOException(String.format("Deciphering error: '%s'", e.getMessage()), e);
 		}

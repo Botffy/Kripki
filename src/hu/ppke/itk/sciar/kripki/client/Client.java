@@ -144,8 +144,7 @@ public class Client {
 
 		channel.writeCiphered(
 			XmlBuilder.element("user",
-				XmlBuilder.attribute("name", user.name),
-				XmlBuilder.attribute("verifier", user.verifier)
+				XmlBuilder.attribute("name", user.name)
 			).toDOM(),
 			sharedKey
 		);
