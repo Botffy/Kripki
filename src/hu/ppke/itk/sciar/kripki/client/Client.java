@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 public class Client {
 	private final static Logger log = LoggerFactory.getLogger("Root.CLIENT");
+	private final static int RECORDKEY_LENGTH = 128;
 	private final static int PBKDF2_ITER = 42;
 	private final static String PASSWORD_SALT = "password";  // mm-hm.
 	private final static String USERNAME_SALT = "userid";  // am I really doing this?
@@ -246,7 +247,7 @@ public class Client {
 			SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
 			Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "SunJCE");
 
-			PBEKeySpec recordspec = new PBEKeySpec(masterKey, recordsalt, PBKDF2_ITER, 128);
+			PBEKeySpec recordspec = new PBEKeySpec(masterKey, recordsalt, PBKDF2_ITER, RECORDKEY_LENGTH);
 			SecretKey recordKey = secretKeyFactory.generateSecret(recordspec);
 			recordspec.clearPassword(); // I'm feeling silly
 			char[] recordKeyChars = ByteUtil.cloneToChars(recordKey.getEncoded());
@@ -287,7 +288,7 @@ public class Client {
 			SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
 			Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding", "SunJCE");
 
-			PBEKeySpec recordspec = new PBEKeySpec(masterKey, recordsalt, PBKDF2_ITER, 128);
+			PBEKeySpec recordspec = new PBEKeySpec(masterKey, recordsalt, PBKDF2_ITER, RECORDKEY_LENGTH);
 			SecretKey recordKey = secretKeyFactory.generateSecret(recordspec);
 			recordspec.clearPassword(); // this looks like good practice, but in effect it's perfectly useless, as keypeces later can't be destroyed.
 			char[] recordKeyChars = ByteUtil.cloneToChars(recordKey.getEncoded());
