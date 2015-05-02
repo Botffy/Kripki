@@ -21,7 +21,9 @@ class RecordTableModel extends AbstractTableModel {
 	private List<Record> data;
 	private Comparator<Record> recordComparator = new Comparator<Record>() {
 		@Override public int compare(Record one, Record other) {
-			return one.url.compareTo(other.url);
+			int Result = one.url.compareTo(other.url);
+			if(Result == 0) Result = one.username.compareTo(other.username);
+			return Result;
 		}
 		@Override public boolean equals(Object that) {
 			return this == that;
